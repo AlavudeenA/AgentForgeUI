@@ -1,0 +1,83 @@
+{
+  "name": "agentic-forge",
+  "displayName": "Agentic Forge",
+  "description": "Multi-Agent Workflow Orchestration System — drag-and-drop workflow builder powered by GitHub Copilot",
+  "version": "0.1.0",
+  "publisher": "agentic-forge",
+  "engines": { "vscode": "^1.90.0" },
+  "categories": ["Other", "AI"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "agentic-forge.openUI",
+        "title": "Open Agentic Forge",
+        "category": "Agentic Forge",
+        "icon": "$(circuit-board)"
+      },
+      {
+        "command": "agentic-forge.startBackend",
+        "title": "Start Backend Server",
+        "category": "Agentic Forge"
+      },
+      {
+        "command": "agentic-forge.refreshModel",
+        "title": "Refresh LM Model",
+        "category": "Agentic Forge"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        { "command": "agentic-forge.openUI" },
+        { "command": "agentic-forge.startBackend" },
+        { "command": "agentic-forge.refreshModel" }
+      ]
+    },
+    "configuration": {
+      "title": "Agentic Forge",
+      "properties": {
+        "agenticForge.flaskPort": {
+          "type": "number",
+          "default": 3456,
+          "description": "Port for the Agentic Forge Flask backend server"
+        },
+        "agenticForge.lmServerPort": {
+          "type": "number",
+          "default": 5050,
+          "description": "Port for the local LM HTTP server (what Flask calls for AI)"
+        },
+        "agenticForge.lmVendor": {
+          "type": "string",
+          "default": "copilot",
+          "description": "Language model vendor (copilot, anthropic, etc.)"
+        },
+        "agenticForge.lmFamily": {
+          "type": "string",
+          "default": "gpt-5-mini",
+          "description": "Language model family/name to prefer"
+        },
+        "agenticForge.autoStartBackend": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically start the Flask backend when the extension activates"
+        },
+        "agenticForge.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "description": "Path to the Python executable used to run the Flask backend"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "vscode:prepublish": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.4.0"
+  }
+}

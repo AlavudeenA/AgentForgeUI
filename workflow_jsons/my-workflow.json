@@ -1,0 +1,233 @@
+{
+  "name": "my-workflow",
+  "nodes": [
+    {
+      "id": "node-2-1778421882443",
+      "type": "agentNode",
+      "position": {
+        "x": -32,
+        "y": -32
+      },
+      "data": {
+        "agentName": "github_createpullRequest_agent",
+        "label": "Github CreatepullRequest Agent",
+        "description": "Creates a pull request on GitHub with a specified branch, title, and description",
+        "inputFormat": {
+          "base_branch": {
+            "default": "main",
+            "depends_on": null,
+            "description": "Target branch for the PR",
+            "options": [],
+            "required": false,
+            "ui_type": "textbox"
+          },
+          "head_branch": {
+            "default": "",
+            "depends_on": null,
+            "description": "Source branch for the PR",
+            "options": [],
+            "required": true,
+            "ui_type": "textbox"
+          },
+          "local_repo_path": {
+            "default": "",
+            "depends_on": null,
+            "description": "Local path to push before creating PR (leave blank to skip push)",
+            "options": [],
+            "required": false,
+            "ui_type": "textbox"
+          },
+          "pr_body": {
+            "default": "",
+            "depends_on": null,
+            "description": "Pull request description / body",
+            "options": [],
+            "required": false,
+            "ui_type": "textarea"
+          },
+          "pr_title": {
+            "default": "",
+            "depends_on": null,
+            "description": "Pull request title",
+            "options": [],
+            "required": true,
+            "ui_type": "textbox"
+          },
+          "repo": {
+            "default": "",
+            "depends_on": null,
+            "description": "GitHub repo in org/name format (e.g. myorg/myrepo)",
+            "options": [],
+            "required": true,
+            "ui_type": "textbox"
+          },
+          "token_type": {
+            "default": "cloud",
+            "depends_on": null,
+            "description": "Which GitHub token to use",
+            "options": [
+              "cloud",
+              "enterprise"
+            ],
+            "required": false,
+            "ui_type": "dropdown"
+          }
+        },
+        "inputOrder": [
+          "repo",
+          "head_branch",
+          "base_branch",
+          "pr_title",
+          "pr_body",
+          "local_repo_path",
+          "token_type"
+        ],
+        "outputFormat": {
+          "message": "<class 'str'>",
+          "pr_url": "<class 'str'>",
+          "success": "<class 'bool'>"
+        },
+        "inputs": {
+          "repo": "",
+          "head_branch": "",
+          "base_branch": "main",
+          "pr_title": "",
+          "pr_body": "",
+          "local_repo_path": "",
+          "token_type": "cloud"
+        },
+        "requires_approval": false
+      },
+      "measured": {
+        "width": 172,
+        "height": 81
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-3-1778421890745",
+      "type": "agentNode",
+      "position": {
+        "x": 256,
+        "y": 240
+      },
+      "data": {
+        "agentName": "github_createpullRequest_agent",
+        "label": "Github CreatepullRequest Agent",
+        "description": "Creates a pull request on GitHub with a specified branch, title, and description",
+        "inputFormat": {
+          "base_branch": {
+            "default": "main",
+            "depends_on": null,
+            "description": "Target branch for the PR",
+            "options": [],
+            "required": false,
+            "ui_type": "textbox"
+          },
+          "head_branch": {
+            "default": "",
+            "depends_on": null,
+            "description": "Source branch for the PR",
+            "options": [],
+            "required": true,
+            "ui_type": "textbox"
+          },
+          "local_repo_path": {
+            "default": "",
+            "depends_on": null,
+            "description": "Local path to push before creating PR (leave blank to skip push)",
+            "options": [],
+            "required": false,
+            "ui_type": "textbox"
+          },
+          "pr_body": {
+            "default": "",
+            "depends_on": null,
+            "description": "Pull request description / body",
+            "options": [],
+            "required": false,
+            "ui_type": "textarea"
+          },
+          "pr_title": {
+            "default": "",
+            "depends_on": null,
+            "description": "Pull request title",
+            "options": [],
+            "required": true,
+            "ui_type": "textbox"
+          },
+          "repo": {
+            "default": "",
+            "depends_on": null,
+            "description": "GitHub repo in org/name format (e.g. myorg/myrepo)",
+            "options": [],
+            "required": true,
+            "ui_type": "textbox"
+          },
+          "token_type": {
+            "default": "cloud",
+            "depends_on": null,
+            "description": "Which GitHub token to use",
+            "options": [
+              "cloud",
+              "enterprise"
+            ],
+            "required": false,
+            "ui_type": "dropdown"
+          }
+        },
+        "inputOrder": [
+          "repo",
+          "head_branch",
+          "base_branch",
+          "pr_title",
+          "pr_body",
+          "local_repo_path",
+          "token_type"
+        ],
+        "outputFormat": {
+          "message": "<class 'str'>",
+          "pr_url": "<class 'str'>",
+          "success": "<class 'bool'>"
+        },
+        "inputs": {
+          "repo": "",
+          "head_branch": "",
+          "base_branch": "main",
+          "pr_title": "",
+          "pr_body": "",
+          "local_repo_path": "",
+          "token_type": "cloud"
+        },
+        "requires_approval": false
+      },
+      "measured": {
+        "width": 172,
+        "height": 81
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-4-1778421895806",
+      "type": "decisionNode",
+      "position": {
+        "x": 176,
+        "y": -16
+      },
+      "data": {
+        "label": "Decision",
+        "condition": "",
+        "description": "Conditional branch"
+      },
+      "measured": {
+        "width": 120,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    }
+  ],
+  "edges": []
+}

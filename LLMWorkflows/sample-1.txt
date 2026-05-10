@@ -1,0 +1,42 @@
+SAMPLE WORKFLOW: JIRA to GitHub PR
+===================================
+{
+  "name": "jira_to_pr_workflow",
+  "description": "Fetch a JIRA story, generate code with Copilot, then open a GitHub PR",
+  "agents": [
+    {
+      "agent_name": "jira_story_details_agent",
+      "node_id": "jira_story_details_agent",
+      "inputs": {
+        "jira_issue_key": "PROJ-123",
+        "server_url": "",
+        "fetch_attachments": "no"
+      },
+      "requires_approval": false
+    },
+    {
+      "agent_name": "copilot_agent",
+      "node_id": "copilot_agent",
+      "inputs": {
+        "prompt": "{state['jira_story_details_agent_output']['title']}: {state['jira_story_details_agent_output']['description']}",
+        "language": "python",
+        "context": "",
+        "model": "gpt-4o"
+      },
+      "requires_approval": true
+    },
+    {
+      "agent_name": "github_createpullRequest_agent",
+      "node_id": "github_createpullRequest_agent",
+      "inputs": {
+        "repo": "myorg/myrepo",
+        "head_branch": "feature/{state['jira_story_details_agent_output']['issue_key']}",
+        "base_branch": "main",
+        "pr_title": "{state['jira_story_details_agent_output']['title']}",
+        "pr_body": "{state['copilot_agent_output']['explanation']}",
+        "token_type": "cloud"
+      },
+      "requires_approval": false
+    }
+  ]
+}

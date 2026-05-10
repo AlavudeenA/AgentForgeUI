@@ -1,0 +1,30 @@
+WORKFLOW JSON SCHEMA TEMPLATE
+==============================
+Generate workflows following this exact structure. Return ONLY valid JSON — no markdown fences, no explanations outside the JSON.
+
+{
+  "name": "snake_case_workflow_name",
+  "description": "One-sentence description of what this workflow accomplishes",
+  "agents": [
+    {
+      "agent_name": "exact_filename_without_extension",
+      "node_id": "exact_filename_without_extension",
+      "inputs": {
+        "field_name": "literal_value_or_placeholder"
+      },
+      "requires_approval": false
+    }
+  ]
+}
+
+PLACEHOLDER SYNTAX (must use single quotes):
+  {state['previous_agent_output']['field_name']}
+  {state['previous_agent__2_output']['field_name']}  <- when same agent appears twice
+
+RULES:
+1. agent_name must exactly match one of the agent filenames in agents_metadata.txt
+2. node_id matches agent_name if agent appears once; suffix __1, __2, etc. if same agent used multiple times
+3. inputs keys must match the agent's declared input fields (see agents_metadata.txt)
+4. Use placeholders to pass output from one agent as input to a later agent
+5. Set requires_approval: true to pause the workflow and ask a human before continuing
+6. Agents execute sequentially in the order listed

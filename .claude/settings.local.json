@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/alavu/Projects/vscode-lm-api/**)",
+      "Bash(Get-ChildItem -Recurse -Force)",
+      "Bash(Select-Object FullName)",
+      "Bash(ConvertTo-Csv -NoTypeInformation)",
+      "Bash(Select-Object -Skip 1)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\alavu\\\\source\\\\repos\\\\structured-data-search-engine\" -Recurse -Force)",
+      "Bash(Select-Object -First 20)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\alavu\\\\source\\\\repos\\\\structured-data-search-engine\\\\vscode-lm-extension\" -Depth 2 | Where-Object { $_.PSIsContainer -or \\($_.Extension -in @\\('.ts', '.json', '.js'\\)\\) })",
+      "PowerShell(New-Item -ItemType Directory -Path \"c:\\\\Users\\\\alavu\\\\source\\\\repos\\\\Agent Forge UI\\\\vscode-extension\\\\src\" -Force)",
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\alavu\\\\source\\\\repos\\\\Agent Forge UI\" -Depth 2 | Where-Object { $_.Name -notmatch \"^\\(node_modules|__pycache__|\\\\.git|dist|\\\\.venv|venv\\)\" } | Select-Object -ExpandProperty FullName | ForEach-Object { $_.Replace\\(\"c:\\\\Users\\\\alavu\\\\source\\\\repos\\\\Agent Forge UI\\\\\", \"\"\\) })",
+      "Bash(mkdir -p \"/c/Users/alavu/source/repos/Agent Forge UI/.vscode\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\alavu\\\\source\\\\repos\\\\Agent Forge UI\\\\webui\\\\src\" -Recurse -Directory)",
+      "Bash(npm run *)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\alavu\\source\\repos\\Agent Forge UI"
+    ]
+  }
+}

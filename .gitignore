@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Environment / secrets
+.env
+
+# Node
+node_modules/
+webui/node_modules/
+vscode-extension/node_modules/
+
+# Build output
+webui/dist/
+vscode-extension/out/
+
+# Logs
+logs/
+*.log
+
+# Uploads
+uploaded_files/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/settings.json
