@@ -294,16 +294,167 @@ PORT=3456
 
 ---
 
-## Troubleshooting
+## Troubleshooting & Diagnostics
 
-**F5 does nothing** — make sure the root `Agent Forge UI` folder is open (not a subfolder). Run `cd vscode-extension && npm install` if `node_modules` is missing.
+### Step 1 — Run the checklist first (especially on a new machine)
 
-**Spinner never goes away** — Flask failed to start. Check `View → Output → Agentic Forge`. Confirm `python --version` works and `pip install -r requirements.txt` completed.
+> The `webui/dist/` build folder is gitignored and must be generated locally. This is the most common cause of a black screen after cloning.
 
-**No Copilot model** — install GitHub Copilot, sign in, then run `Agentic Forge: Refresh LM Model` from the command palette.
+```bash
+# Confirm Python is available
+python --version
 
-**UI blank / can't connect** — run `cd webui && npm run build`. Confirm port 3456 is free: `netstat -ano | findstr 3456`.
+# Install Python packages
+pip install -r requirements.txt
 
-**Agent not in sidebar** — class names must end exactly in `Input`, `Output`, `Agent`. Check `logs/app.log` for import errors.
+# Build the React UI (required after every fresh clone)
+cd webui
+npm install
+npm run build
+cd ..
 
-**Placeholder not resolving** — use single quotes: `{state['key']['field']}`. The upstream agent must have completed successfully.
+# Install extension dependencies
+cd vscode-extension
+npm install
+cd ..
+```
+
+---
+
+### Black screen / blank WebView
+
+The loading screen has a dark background — if Flask never starts the UI never loads and it looks like a black screen.
+
+**Check the Output channel first:**
+`View → Output → Agentic Forge` — Flask startup errors and LM model status are logged here.
+
+**Run Flask manually to see the exact error:**
+```bash
+python workflow_builder.py
+```
+
+**Check if the port is already in use:**
+```bash
+# Windows
+netstat -ano | findstr 3456
+netstat -ano | findstr 5050
+
+# Kill process using port 3456 (replace PID)
+taskkill /PID <PID> /F
+```
+
+**If ports are blocked by corporate firewall** — change the ports in VS Code settings (`Ctrl+,` → search "Agentic Forge"):
+- `agenticForge.flaskPort` → try `8080` or `9000`
+- `agenticForge.lmServerPort` → try `8081`
+
+Then update `.env`: `PORT=8080`
+
+---
+
+### Python not found / wrong Python
+
+**Set the full Python path in VS Code settings:**
+```
+agenticForge.pythonPath = C:\Users\yourname\AppData\Local\Programs\Python\Python311\python.exe
+```
+
+Find your Python path:
+```bash
+# Windows
+where python
+py -3 -c "import sys; print(sys.executable)"
+```
+
+**Virtual environment users** — point `agenticForge.pythonPath` at the venv Python:
+```
+C:\Users\yourname\project\.venv\Scripts\python.exe
+```
+
+---
+
+### Missing packages / import errors
+
+```bash
+# Check what's installed
+pip list
+
+# Reinstall everything
+pip install -r requirements.txt --force-reinstall
+
+# If pip itself is broken
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+Check `logs/app.log` for `ImportError` or `ModuleNotFoundError` lines.
+
+---
+
+### F5 does nothing / extension won't launch
+
+- Make sure the **root `Agent Forge UI` folder** is open in VS Code, not a subfolder
+- Check the Terminal panel for TypeScript compile errors
+- Run `cd vscode-extension && npm install` if `node_modules` is missing
+- Try compiling manually: `cd vscode-extension && npm run compile` — errors will be visible
+
+---
+
+### No Copilot model / LM calls failing
+
+- GitHub Copilot extension must be installed and signed in in the **main** VS Code window
+- Run `Ctrl+Shift+P` → **Agentic Forge: Refresh LM Model**
+- Check `View → Output → Agentic Forge` for `[LM]` lines — it will say which model was cached or why it failed
+- If the model family isn't found it falls back to any available Copilot model automatically
+
+---
+
+### UI shows but agents don't appear in sidebar
+
+```bash
+# Trigger a rescan without restarting Flask
+curl -X POST http://localhost:3456/refresh_agents_metadata
+```
+
+Or click the refresh button in the UI toolbar.
+
+- Class names must end exactly in `Input`, `Output`, `Agent` (case-sensitive)
+- Check `logs/app.log` for Python import errors in the agent file
+- Confirm the agent file is inside the `agents/` folder (not a subfolder)
+
+---
+
+### Workflow run stuck / never completes
+
+- Check `logs/app.log` — each agent logs its start, output, and any exceptions
+- If a node has HITL enabled, the run pauses and waits — check the Run tab for an Approve/Reject prompt
+- Check for placeholder errors: `WARNING: Placeholder` in the log means a `{state['...']}` reference couldn't be resolved — the upstream agent may have failed
+
+---
+
+### Placeholder not resolving
+
+- Use **single quotes**: `{state['key']['field']}` not double quotes
+- The upstream agent must have completed successfully and written its `_output` key
+- Check `logs/app.log` for `WARNING: Placeholder` lines
+
+---
+
+### Corporate / office environment issues
+
+| Symptom | Likely cause | Fix |
+|---------|-------------|-----|
+| Black screen after F5 | `webui/dist/` not built | Run `cd webui && npm run build` |
+| Flask starts but UI doesn't load | Port 3456 blocked | Change `agenticForge.flaskPort` to `8080` |
+| LM calls fail silently | Port 5050 blocked | Change `agenticForge.lmServerPort` to `8081` |
+| `python` not found | Python not on system PATH | Set full path in `agenticForge.pythonPath` |
+| Packages fail to install | Corporate proxy blocking pip | `pip install -r requirements.txt --proxy http://proxy:port` |
+| `npm install` fails | Corporate npm registry | `npm install --registry https://registry.npmjs.org` |
+
+---
+
+### Still stuck?
+
+1. Open `logs/app.log` — the full runtime log is here
+2. Open `View → Output → Agentic Forge` — extension-level errors are here
+3. Open browser DevTools on `http://localhost:3456` (standalone mode) to check console errors
+4. Try standalone mode (`python workflow_builder.py` + browser) to isolate whether the issue is Flask or the VS Code extension
