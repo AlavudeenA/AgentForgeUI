@@ -63,7 +63,7 @@ class CopilotAgent(Agent):
 
         logger.info(f"CopilotAgent: generating {language} code")
 
-        llm_base = os.getenv("OPENAI_API_BASE", "http://localhost:5050")
+        llm_base = os.getenv("OPENAI_API_BASE", "http://localhost:8081")
         api_key = os.getenv("OPENAI_API_KEY", "none")
 
         system_msg = (

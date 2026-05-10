@@ -6,12 +6,12 @@ let flaskProcess: cp.ChildProcess | undefined;
 
 export function startFlaskBackend(
   extensionPath: string,
-  outputChannel: vscode.OutputChannel
+  outputChannel: vscode.OutputChannel,
 ): cp.ChildProcess | undefined {
   const config = vscode.workspace.getConfiguration("agenticForge");
   const pythonPath = config.get<string>("pythonPath", "python");
   const flaskPort = config.get<number>("flaskPort", 3456);
-  const lmPort = config.get<number>("lmServerPort", 5050);
+  const lmPort = config.get<number>("lmServerPort", 8081);
 
   // The project root sits one level above the vscode-extension folder
   const projectRoot = path.join(extensionPath, "..");

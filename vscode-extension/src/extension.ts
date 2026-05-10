@@ -150,7 +150,7 @@ export async function activate(
 
   const config = vscode.workspace.getConfiguration("agenticForge");
   const flaskPort = config.get<number>("flaskPort", 3456);
-  const lmPort = config.get<number>("lmServerPort", 5050);
+  const lmPort = config.get<number>("lmServerPort", 8081);
 
   // 1. Cache the LM model immediately (selectChatModels works at activation time)
   await cacheModel(outputChannel);

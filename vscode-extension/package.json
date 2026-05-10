@@ -4,9 +4,16 @@
   "description": "Multi-Agent Workflow Orchestration System — drag-and-drop workflow builder powered by GitHub Copilot",
   "version": "0.1.0",
   "publisher": "agentic-forge",
-  "engines": { "vscode": "^1.90.0" },
-  "categories": ["Other", "AI"],
-  "activationEvents": ["onStartupFinished"],
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other",
+    "AI"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -29,9 +36,15 @@
     ],
     "menus": {
       "commandPalette": [
-        { "command": "agentic-forge.openUI" },
-        { "command": "agentic-forge.startBackend" },
-        { "command": "agentic-forge.refreshModel" }
+        {
+          "command": "agentic-forge.openUI"
+        },
+        {
+          "command": "agentic-forge.startBackend"
+        },
+        {
+          "command": "agentic-forge.refreshModel"
+        }
       ]
     },
     "configuration": {
@@ -44,7 +57,7 @@
         },
         "agenticForge.lmServerPort": {
           "type": "number",
-          "default": 5050,
+          "default": 8081,
           "description": "Port for the local LM HTTP server (what Flask calls for AI)"
         },
         "agenticForge.lmVendor": {

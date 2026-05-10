@@ -125,7 +125,7 @@ def generate_workflow_via_copilot():
         "Return ONLY valid JSON matching the workflow schema. No markdown fences."
     )
 
-    llm_base = os.getenv("OPENAI_API_BASE", "http://localhost:5050")
+    llm_base = os.getenv("OPENAI_API_BASE", "http://localhost:8081")
     api_key = os.getenv("OPENAI_API_KEY", "none")
 
     try:
