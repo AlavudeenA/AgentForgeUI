@@ -21,7 +21,11 @@
       "PowerShell(Get-ChildItem -Recurse \"c:\\\\Users\\\\alavu\\\\source\\\\repos\\\\AFUI\\\\vscode-extension\\\\\" -ErrorAction SilentlyContinue | Select-Object FullName | ForEach-Object { $_.FullName } | Sort-Object)",
       "PowerShell(Get-ChildItem \"c:\\\\Users\\\\alavu\\\\source\\\\repos\\\\AFUI\\\\vscode-extension\\\\\" | Where-Object { -not $_.Name.StartsWith\\('.'\\) -and $_.Name -ne 'node_modules' -and $_.Name -ne 'out' } | Select-Object Name, @{Name='Type';Expression={if\\($_.PSIsContainer\\){'DIR'}else{'FILE'}}})",
       "Bash(npx tsc *)",
-      "Bash(netstat -ano)"
+      "Bash(netstat -ano)",
+      "Bash(Remove-Item \"c:\\\\Users\\\\alavu\\\\source\\\\repos\\\\Agent Forge UI\\\\webui\\\\src\\\\components\\\\nodes\\\\McpTaskNode.jsx\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ],
     "additionalDirectories": [
       "C:\\Users\\alavu\\source\\repos\\Agent Forge UI"

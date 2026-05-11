@@ -11,13 +11,7 @@ export default function DecisionNode({ data, selected }) {
         </div>
       </div>
 
-      {data.condition && (
-        <div className="decision-node__condition">
-          <code>{data.condition}</code>
-        </div>
-      )}
-
-      <Handle type="source" position={Position.Bottom} id="yes" className="flow-handle flow-handle--true" />
+<Handle type="source" position={Position.Bottom} id="yes" className="flow-handle flow-handle--true" />
       <Handle type="source" position={Position.Right}  id="no"  className="flow-handle flow-handle--false" />
     </div>
   );
