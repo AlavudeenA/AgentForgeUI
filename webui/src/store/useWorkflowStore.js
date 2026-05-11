@@ -137,6 +137,12 @@ export const useWorkflowStore = create((set, get) => ({
     return id;
   },
 
+  addMcpTaskNode: (position) => {
+    const id = newId();
+    set((s) => ({ nodes: [...s.nodes, { id, type: "mcpTaskNode", position, data: { label: "MCP Client", serverName: "", toolName: "", arguments: "", outputKey: "mcp_result" } }], selectedNodeId: id, selectedEdgeId: null }));
+    return id;
+  },
+
   addAnnotationNode: (position) => {
     const id = newId();
     set((s) => ({ nodes: [...s.nodes, { id, type: "annotationNode", position, data: { text: "Add a note…" } }], selectedNodeId: id, selectedEdgeId: null }));
@@ -188,7 +194,7 @@ updateNodeData: (id, patch) =>
   // ── Derive the full workflow payload for backend execution ────────────────
   buildWorkflowPayload: () => {
     const { nodes, edges } = get();
-    const EXEC_TYPES = new Set(["agentNode", "timerEventNode", "decisionNode"]);
+    const EXEC_TYPES = new Set(["agentNode", "timerEventNode", "decisionNode", "mcpTaskNode"]);
 
     // Topological sort
     const adj = {};
@@ -223,7 +229,13 @@ updateNodeData: (id, patch) =>
         return { node_type: "decision", agent_name: "__decision__", node_id: n.id,
                  condition: n.data.condition || "False", inputs: {}, requires_approval: false };
       }
-return { agent_name: n.data.agentName, node_id: n.id,
+      if (n.type === "mcpTaskNode") {
+        return { node_type: "mcp", agent_name: "__mcp__", node_id: n.id,
+                 server_name: n.data.serverName || "", tool_name: n.data.toolName || "",
+                 arguments: n.data.arguments || "", output_key: n.data.outputKey || "mcp_result",
+                 inputs: {}, requires_approval: false };
+      }
+      return { agent_name: n.data.agentName, node_id: n.id,
                inputs: n.data.inputs || {}, requires_approval: n.data.requires_approval || false };
     });
 

@@ -16,6 +16,7 @@ import ParallelGatewayNode from "./nodes/ParallelGatewayNode.jsx";
 import ServiceTaskNode from "./nodes/ServiceTaskNode.jsx";
 import ScriptTaskNode from "./nodes/ScriptTaskNode.jsx";
 import AnnotationNode from "./nodes/AnnotationNode.jsx";
+import McpTaskNode from "./nodes/McpTaskNode.jsx";
 import CustomEdge from "./edges/CustomEdge.jsx";
 
 const NODE_TYPES = {
@@ -27,6 +28,7 @@ const NODE_TYPES = {
   serviceTaskNode: ServiceTaskNode,
   scriptTaskNode: ScriptTaskNode,
   annotationNode: AnnotationNode,
+  mcpTaskNode: McpTaskNode,
 };
 
 const EDGE_TYPES = { customEdge: CustomEdge };
@@ -39,6 +41,7 @@ const EVENT_NODE_COLORS = {
 const TASK_NODE_COLORS = {
   serviceTaskNode: "#6366f1",
   scriptTaskNode: "#8b5cf6",
+  mcpTaskNode: "#059669",
 };
 
 function miniMapColor(n) {
@@ -69,6 +72,7 @@ function CanvasInner() {
   const addServiceTaskNode = useWorkflowStore((s) => s.addServiceTaskNode);
   const addScriptTaskNode = useWorkflowStore((s) => s.addScriptTaskNode);
   const addAnnotationNode = useWorkflowStore((s) => s.addAnnotationNode);
+  const addMcpTaskNode = useWorkflowStore((s) => s.addMcpTaskNode);
   const SHAPE_ADDERS = {
     decision: addDecisionNode,
     timerEvent: addTimerEventNode,
@@ -77,6 +81,7 @@ function CanvasInner() {
     serviceTask: addServiceTaskNode,
     scriptTask: addScriptTaskNode,
     annotation: addAnnotationNode,
+    mcpTask: addMcpTaskNode,
   };
 
   const onDragOver = useCallback((e) => {
@@ -104,7 +109,7 @@ function CanvasInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [screenToFlowPosition, addAgentNode, addDecisionNode,
      addTimerEventNode, addMessageEventNode, addParallelGatewayNode,
-     addServiceTaskNode, addScriptTaskNode, addAnnotationNode]
+     addServiceTaskNode, addScriptTaskNode, addAnnotationNode, addMcpTaskNode]
   );
 
   const onNodeClick = useCallback(

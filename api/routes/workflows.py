@@ -172,6 +172,179 @@ def get_logs():
     return jsonify({"lines": all_lines})
 
 
+# ─── MCP config + client ──────────────────────────────────────────────────────
+
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
+
+def _load_mcp_config() -> dict:
+    """Read mcp.json from .vscode/mcp.json or mcp.json in the project root.
+
+    Supports VS Code format  { "servers": { "name": { "url": "...", "type": "http"|"sse" } } }
+    and Claude Desktop format { "mcpServers": { "name": { "url": "...", "transport": "..." } } }.
+    Returns { server_name: { "url": str, "transport": str, "headers": dict } }.
+    """
+    candidates = [
+        os.path.join(_PROJECT_ROOT, ".vscode", "mcp.json"),
+        os.path.join(_PROJECT_ROOT, "mcp.json"),
+    ]
+    for path in candidates:
+        if os.path.exists(path):
+            with open(path, encoding="utf-8") as f:
+                data = json.load(f)
+            raw = data.get("servers") or data.get("mcpServers") or {}
+            result = {}
+            for name, cfg in raw.items():
+                url = cfg.get("url", "")
+                transport = cfg.get("type") or cfg.get("transport", "auto")
+                if transport == "http":
+                    transport = "streamable-http"
+                headers = {}
+                if cfg.get("apiKey"):
+                    headers["Authorization"] = f"Bearer {cfg['apiKey']}"
+                if cfg.get("headers"):
+                    headers.update(cfg["headers"])
+                result[name] = {"url": url, "transport": transport, "headers": headers}
+            return result
+    return {}
+
+
+def _mcp_use_sse(url: str, transport: str) -> bool:
+    return transport == "sse" or (transport == "auto" and url.rstrip("/").endswith("/sse"))
+
+
+async def _call_mcp_tool(url: str, tool_name: str, arguments: dict,
+                         headers: dict, transport: str = "auto") -> dict:
+    try:
+        from mcp import ClientSession  # type: ignore
+    except ImportError as exc:
+        raise RuntimeError("MCP package not installed. Run: pip install mcp") from exc
+
+    try:
+        if _mcp_use_sse(url, transport):
+            from mcp.client.sse import sse_client  # type: ignore
+            async with sse_client(url, headers=headers) as (read, write):
+                async with ClientSession(read, write) as session:
+                    await session.initialize()
+                    result = await session.call_tool(tool_name, arguments)
+        else:
+            from mcp.client.streamable_http import streamablehttp_client  # type: ignore
+            async with streamablehttp_client(url, headers=headers) as (read, write, _):
+                async with ClientSession(read, write) as session:
+                    await session.initialize()
+                    result = await session.call_tool(tool_name, arguments)
+    except Exception as exc:
+        raise RuntimeError(f"MCP call failed ({url} / {tool_name}): {exc}") from exc
+
+    content_list = getattr(result, "content", [])
+    if content_list:
+        first = content_list[0]
+        text = getattr(first, "text", None)
+        if text is not None:
+            try:
+                return json.loads(text)
+            except (json.JSONDecodeError, TypeError):
+                return {"result": text}
+        data = getattr(first, "data", None)
+        if data is not None:
+            return {"result": str(data)}
+    return {"result": str(result)}
+
+
+async def _list_mcp_tools_from_config(server_name: str) -> list[dict]:
+    config = _load_mcp_config()
+    if server_name not in config:
+        raise ValueError(f"Server '{server_name}' not found in mcp.json")
+    cfg = config[server_name]
+    try:
+        from mcp import ClientSession  # type: ignore
+    except ImportError as exc:
+        raise RuntimeError("MCP package not installed. Run: pip install mcp") from exc
+
+    url, headers, transport = cfg["url"], cfg["headers"], cfg["transport"]
+    if _mcp_use_sse(url, transport):
+        from mcp.client.sse import sse_client  # type: ignore
+        async with sse_client(url, headers=headers) as (read, write):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                result = await session.list_tools()
+    else:
+        from mcp.client.streamable_http import streamablehttp_client  # type: ignore
+        async with streamablehttp_client(url, headers=headers) as (read, write, _):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                result = await session.list_tools()
+
+    return [
+        {"name": t.name, "description": getattr(t, "description", ""),
+         "inputSchema": getattr(t, "inputSchema", {}) or {}}
+        for t in getattr(result, "tools", [])
+    ]
+
+
+def _make_mcp_node(server_name: str, tool_name: str, arguments_str: str,
+                   output_key: str, node_id: str, run_id: str):
+    async def node_fn(state: dict) -> dict:
+        run = LANGGRAPH_RUNS.get(run_id, {})
+        if state.get("agent_status", {}).get(node_id) == "completed":
+            return state
+
+        state.setdefault("agent_status", {})[node_id] = "in-progress"
+        logger.info(f"AGENT_STATUS|run_id={run_id}|agent={node_id}|status=in-progress|mcp_tool={tool_name}")
+        if run:
+            run["state"] = state
+
+        try:
+            config = _load_mcp_config()
+            if server_name not in config:
+                raise RuntimeError(f"MCP server '{server_name}' not found in mcp.json")
+            cfg = config[server_name]
+
+            resolved = resolve_placeholders_input(arguments_str or "{}", state)
+            try:
+                arguments = json.loads(resolved) if resolved.strip() else {}
+            except json.JSONDecodeError:
+                arguments = {}
+
+            result = await _call_mcp_tool(cfg["url"], tool_name, arguments, cfg["headers"], cfg["transport"])
+
+            actual_key = output_key or "mcp_result"
+            state[actual_key] = result
+            state[f"{node_id}_output"] = result
+            state["agent_status"][node_id] = "completed"
+            logger.info(f"AGENT_STATUS|run_id={run_id}|agent={node_id}|status=completed")
+        except Exception as exc:
+            state["agent_status"][node_id] = "error"
+            state[f"{node_id}_error"] = str(exc)
+            logger.error(f"AGENT_STATUS|run_id={run_id}|agent={node_id}|status=error|error={exc}")
+
+        if run:
+            run["state"] = state
+        return state
+
+    return node_fn
+
+
+@workflows_bp.route("/mcp_servers", methods=["GET"])
+def mcp_servers():
+    config = _load_mcp_config()
+    return jsonify({"servers": [{"name": n, "url": c["url"]} for n, c in config.items()]})
+
+
+@workflows_bp.route("/mcp_list_tools", methods=["POST"])
+def mcp_list_tools_route():
+    data = request.json or {}
+    server_name = data.get("server_name", "").strip()
+    if not server_name:
+        return jsonify({"error": "server_name is required"}), 400
+    try:
+        tools = asyncio.run(_list_mcp_tools_from_config(server_name))
+        return jsonify({"tools": tools})
+    except Exception as exc:
+        logger.error(f"mcp_list_tools failed: {exc}")
+        return jsonify({"error": str(exc)}), 500
+
+
 # ─── LangGraph execution ───────────────────────────────────────────────────────
 
 def _normalize_agent_config(raw: dict) -> dict:
@@ -192,7 +365,7 @@ def _normalize_agent_config(raw: dict) -> dict:
     }
 
 
-_SPECIAL_NODE_TYPES = ("timer", "decision")
+_SPECIAL_NODE_TYPES = ("timer", "decision", "mcp")
 
 
 def _assign_node_ids(agents_list: list[dict]) -> list[dict]:
@@ -524,6 +697,14 @@ def run_workflow_langgraph():
             node_fn = _make_timer_node(agent_cfg.get("timer_value", "5"), node_id, run_id)
         elif agent_cfg.get("node_type") == "decision":
             node_fn = _make_decision_node(agent_cfg.get("condition", "False"), node_id, run_id)
+        elif agent_cfg.get("node_type") == "mcp":
+            node_fn = _make_mcp_node(
+                agent_cfg.get("server_name", ""),
+                agent_cfg.get("tool_name", ""),
+                agent_cfg.get("arguments", ""),
+                agent_cfg.get("output_key", "mcp_result"),
+                node_id, run_id,
+            )
         else:
             try:
                 agent_instance = _load_agent_instance(agent_name)

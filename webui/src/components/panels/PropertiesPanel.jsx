@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { api } from "../../api/client.js";
 import { useWorkflowStore } from "../../store/useWorkflowStore.js";
 
 const EVENT_TYPES = ["startEventNode", "endEventNode", "timerEventNode", "messageEventNode"];
@@ -241,6 +242,141 @@ function GatewayPanel({ node }) {
   );
 }
 
+function McpPanel({ node }) {
+  const updateNodeData = useWorkflowStore((s) => s.updateNodeData);
+  const deleteNode = useWorkflowStore((s) => s.deleteNode);
+  const clearSelection = useWorkflowStore((s) => s.clearSelection);
+  const { data, id } = node;
+
+  const [servers, setServers] = useState([]);
+  const [fetchingTools, setFetchingTools] = useState(false);
+  const [fetchedTools, setFetchedTools] = useState([]);
+  const [fetchError, setFetchError] = useState("");
+
+  useEffect(() => {
+    api.getMcpServers().then((r) => setServers(r.servers || [])).catch(() => {});
+  }, []);
+
+  const handleFetchTools = async () => {
+    if (!data.serverName) return;
+    setFetchingTools(true);
+    setFetchError("");
+    setFetchedTools([]);
+    try {
+      const res = await api.listMcpTools(data.serverName);
+      if (res.error) setFetchError(res.error);
+      else setFetchedTools(res.tools || []);
+    } catch (e) {
+      setFetchError(String(e));
+    } finally {
+      setFetchingTools(false);
+    }
+  };
+
+  const selectTool = (tool) => {
+    const argKeys = Object.keys(tool.inputSchema?.properties || {});
+    updateNodeData(id, {
+      toolName: tool.name,
+      arguments: argKeys.length
+        ? JSON.stringify(Object.fromEntries(argKeys.map((k) => [k, ""])), null, 2)
+        : data.arguments || "",
+    });
+    setFetchedTools([]);
+  };
+
+  return (
+    <div className="prop-panel">
+      <div className="prop-panel__header">
+        <div>
+          <div className="prop-panel__title">{data.label || "MCP Client"}</div>
+          <div className="prop-panel__subtitle">MCP Task</div>
+        </div>
+        <button className="btn btn--danger btn--xs" onClick={() => { deleteNode(id); clearSelection(); }}>✕</button>
+      </div>
+      <div className="prop-panel__body prop-section">
+
+        <PropField label="Display Label">
+          <input className="prop-input" value={data.label || ""} onChange={(e) => updateNodeData(id, { label: e.target.value })} />
+        </PropField>
+
+        <PropField label="MCP Server" hint="Servers are read from .vscode/mcp.json or mcp.json">
+          <select
+            className="prop-select"
+            value={data.serverName || ""}
+            onChange={(e) => updateNodeData(id, { serverName: e.target.value, toolName: "", arguments: "" })}
+          >
+            <option value="">— select server —</option>
+            {servers.map((s) => <option key={s.name} value={s.name}>{s.name}</option>)}
+          </select>
+          {servers.length === 0 && (
+            <span style={{ fontSize: "0.73rem", color: "var(--text-muted)", marginTop: 4, display: "block" }}>
+              No servers found — add them to <code>.vscode/mcp.json</code>
+            </span>
+          )}
+        </PropField>
+
+        <PropField label="Tool Name" hint="Tool to call on the selected server">
+          <div style={{ display: "flex", gap: 6 }}>
+            <input
+              className="prop-input"
+              value={data.toolName || ""}
+              placeholder="e.g. add, search"
+              onChange={(e) => updateNodeData(id, { toolName: e.target.value })}
+              style={{ flex: 1 }}
+            />
+            <button
+              className="btn btn--ghost btn--xs"
+              onClick={handleFetchTools}
+              disabled={fetchingTools || !data.serverName}
+              title="Fetch available tools from the selected server"
+              style={{ whiteSpace: "nowrap" }}
+            >
+              {fetchingTools ? "…" : "⟳ Fetch"}
+            </button>
+          </div>
+          {fetchError && (
+            <span style={{ color: "var(--error, #ef4444)", fontSize: "0.73rem", marginTop: 4, display: "block" }}>
+              {fetchError}
+            </span>
+          )}
+          {fetchedTools.length > 0 && (
+            <div className="field-suggestions">
+              <div className="field-suggestions__header">Available tools — click to select</div>
+              {fetchedTools.map((t) => (
+                <div key={t.name} className="field-suggestions__item" onMouseDown={(e) => { e.preventDefault(); selectTool(t); }}>
+                  <span className="field-suggestions__agent">{t.name}</span>
+                  {t.description && <span className="field-suggestions__field" style={{ fontSize: "0.72rem" }}>{t.description}</span>}
+                </div>
+              ))}
+            </div>
+          )}
+        </PropField>
+
+        <PropField label="Arguments (JSON)" hint="Tool inputs — supports {state['...']} placeholders">
+          <textarea
+            className="prop-textarea"
+            rows={4}
+            value={data.arguments || ""}
+            placeholder={'{"a": "10", "b": "5"}'}
+            onChange={(e) => updateNodeData(id, { arguments: e.target.value })}
+            style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.8rem" }}
+          />
+        </PropField>
+
+        <PropField label="Output Key" hint="State key for the tool result — reference as {state['key']}">
+          <input
+            className="prop-input"
+            value={data.outputKey || ""}
+            placeholder="mcp_result"
+            onChange={(e) => updateNodeData(id, { outputKey: e.target.value })}
+          />
+        </PropField>
+
+      </div>
+    </div>
+  );
+}
+
 function TaskPanel({ node }) {
   const updateNodeData = useWorkflowStore((s) => s.updateNodeData);
   const deleteNode = useWorkflowStore((s) => s.deleteNode);
@@ -371,6 +507,7 @@ function NodePanel({ node }) {
 
   if (EVENT_TYPES.includes(type)) return <EventPanel node={node} />;
   if (GATEWAY_TYPES.includes(type)) return <GatewayPanel node={node} />;
+  if (type === "mcpTaskNode") return <McpPanel node={node} />;
   if (TASK_TYPES.includes(type)) return <TaskPanel node={node} />;
   if (type === "annotationNode") return <AnnotationPanel node={node} />;
 

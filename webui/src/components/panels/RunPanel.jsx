@@ -98,7 +98,7 @@ export default function RunStatusOverlay() {
 
   if (!activeRunId) return null;
 
-  const EXEC_TYPES = new Set(["agentNode", "timerEventNode", "decisionNode"]);
+  const EXEC_TYPES = new Set(["agentNode", "timerEventNode", "decisionNode", "mcpTaskNode"]);
   const execNodes = nodes.filter((n) => EXEC_TYPES.has(n.type));
 
   const displayNode = execNodes.find((n) => n.data?.agentName === "display_output_agent");
@@ -108,6 +108,7 @@ export default function RunStatusOverlay() {
   const nodeLabel = (n) => {
     if (n.type === "timerEventNode") return `⏱ ${n.data?.label || "Timer"} (${n.data?.timerValue || ""}s)`;
     if (n.type === "decisionNode") return `◆ ${n.data?.label || "Decision"}`;
+    if (n.type === "mcpTaskNode") return `🔌 ${n.data?.label || "MCP"} (${n.data?.toolName || ""})`;
     return n.data?.agentName || n.id;
   };
 

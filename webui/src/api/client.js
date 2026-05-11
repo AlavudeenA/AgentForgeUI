@@ -40,6 +40,10 @@ export const api = {
       body: JSON.stringify({ run_id: runId, node_id: nodeId, feedback }),
     }),
 
+  getMcpServers: () => fetchJSON("/mcp_servers"),
+  listMcpTools: (serverName) =>
+    fetchJSON("/mcp_list_tools", { method: "POST", body: JSON.stringify({ server_name: serverName }) }),
+
   tailLogs: (lines = 200) => fetchJSON(`/logs/tail?lines=${lines}`),
 
   uploadFile: (file) => {
