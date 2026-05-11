@@ -13,12 +13,9 @@ import DecisionNode from "./nodes/DecisionNode.jsx";
 import TimerEventNode from "./nodes/TimerEventNode.jsx";
 import MessageEventNode from "./nodes/MessageEventNode.jsx";
 import ParallelGatewayNode from "./nodes/ParallelGatewayNode.jsx";
-import UserTaskNode from "./nodes/UserTaskNode.jsx";
 import ServiceTaskNode from "./nodes/ServiceTaskNode.jsx";
 import ScriptTaskNode from "./nodes/ScriptTaskNode.jsx";
-import SendTaskNode from "./nodes/SendTaskNode.jsx";
 import AnnotationNode from "./nodes/AnnotationNode.jsx";
-import McpTaskNode from "./nodes/McpTaskNode.jsx";
 import CustomEdge from "./edges/CustomEdge.jsx";
 
 const NODE_TYPES = {
@@ -27,12 +24,9 @@ const NODE_TYPES = {
   timerEventNode: TimerEventNode,
   messageEventNode: MessageEventNode,
   parallelGatewayNode: ParallelGatewayNode,
-  userTaskNode: UserTaskNode,
   serviceTaskNode: ServiceTaskNode,
   scriptTaskNode: ScriptTaskNode,
-  sendTaskNode: SendTaskNode,
   annotationNode: AnnotationNode,
-  mcpTaskNode: McpTaskNode,
 };
 
 const EDGE_TYPES = { customEdge: CustomEdge };
@@ -43,10 +37,8 @@ const EVENT_NODE_COLORS = {
 };
 
 const TASK_NODE_COLORS = {
-  userTaskNode: "#4f7fff",
   serviceTaskNode: "#6366f1",
   scriptTaskNode: "#8b5cf6",
-  sendTaskNode: "#06b6d4",
 };
 
 function miniMapColor(n) {
@@ -74,24 +66,17 @@ function CanvasInner() {
   const addTimerEventNode = useWorkflowStore((s) => s.addTimerEventNode);
   const addMessageEventNode = useWorkflowStore((s) => s.addMessageEventNode);
   const addParallelGatewayNode = useWorkflowStore((s) => s.addParallelGatewayNode);
-  const addUserTaskNode = useWorkflowStore((s) => s.addUserTaskNode);
   const addServiceTaskNode = useWorkflowStore((s) => s.addServiceTaskNode);
   const addScriptTaskNode = useWorkflowStore((s) => s.addScriptTaskNode);
-  const addSendTaskNode = useWorkflowStore((s) => s.addSendTaskNode);
   const addAnnotationNode = useWorkflowStore((s) => s.addAnnotationNode);
-  const addMcpTaskNode = useWorkflowStore((s) => s.addMcpTaskNode);
-
   const SHAPE_ADDERS = {
     decision: addDecisionNode,
     timerEvent: addTimerEventNode,
     messageEvent: addMessageEventNode,
     parallelGateway: addParallelGatewayNode,
-    userTask: addUserTaskNode,
     serviceTask: addServiceTaskNode,
     scriptTask: addScriptTaskNode,
-    sendTask: addSendTaskNode,
     annotation: addAnnotationNode,
-    mcpTask: addMcpTaskNode,
   };
 
   const onDragOver = useCallback((e) => {
@@ -119,7 +104,7 @@ function CanvasInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [screenToFlowPosition, addAgentNode, addDecisionNode,
      addTimerEventNode, addMessageEventNode, addParallelGatewayNode,
-     addUserTaskNode, addServiceTaskNode, addScriptTaskNode, addSendTaskNode, addAnnotationNode, addMcpTaskNode]
+     addServiceTaskNode, addScriptTaskNode, addAnnotationNode]
   );
 
   const onNodeClick = useCallback(

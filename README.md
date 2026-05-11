@@ -9,6 +9,8 @@ Multi-agent workflow orchestration platform. Build automation pipelines visually
 - Drag agents and workflow elements onto a canvas and connect them
 - Configure each node's inputs in the properties panel
 - Run the workflow — agents execute in order, outputs feed into the next agent
+- Branch conditionally using XOR gateways (decision nodes)
+- Add timed delays between agents using Timer nodes
 - Pause at any step for human review (HITL) before continuing
 - Generate workflows from natural language via Copilot
 - Save and reload workflows as JSON
@@ -36,8 +38,8 @@ Agent Forge UI/
 │       └── styles/main.css    # Wells Fargo white/red theme
 └── vscode-extension/
     └── src/
-        ├── extension.ts       # Entry point — registers commands, opens WebView
-        ├── server.ts          # Copilot LM proxy (OpenAI-compatible, port 5050)
+        ├── extension.ts       # Entry point — serves built React dist directly in WebView
+        ├── server.ts          # Copilot LM proxy (OpenAI-compatible, port 8081)
         └── backend.ts         # Spawns Flask as a child process
 ```
 
@@ -50,26 +52,23 @@ Agent Forge UI/
 | Python | 3.10+ | Must be on PATH |
 | Node.js | 18+ | |
 | VS Code | 1.90+ | For extension mode |
-| GitHub Copilot | Active subscription | For extension mode |
+| GitHub Copilot | Active subscription | For LLM features |
 
 ---
 
 ## One-time setup
 
 ```bash
-# 1. Copy env and fill in credentials (all optional)
-copy .env.example .env
-
-# 2. Python dependencies
+# 1. Python dependencies
 pip install -r requirements.txt
 
-# 3. React UI — build once (or after any UI changes)
+# 2. React UI — build once (required after every fresh clone or UI change)
 cd webui
 npm install
 npm run build
 cd ..
 
-# 4. VS Code extension dependencies
+# 3. VS Code extension dependencies
 cd vscode-extension
 npm install
 cd ..
@@ -81,25 +80,18 @@ cd ..
 
 ### Mode 1 — VS Code Extension (recommended)
 
-No API key needed — uses GitHub Copilot directly.
-
 1. Open the **`Agent Forge UI`** root folder in VS Code (not a subfolder)
-2. Press **F5** → compiles the TypeScript extension and opens an Extension Development Host window
+2. Press **F5** → compiles TypeScript and opens an Extension Development Host window
 3. In the host window: `Ctrl+Shift+P` → **Agentic Forge: Open Agentic Forge**
 
-The UI opens as a panel inside VS Code. Flask (port 3456) and the Copilot LM proxy (port 5050) start automatically.
+Flask (port 3456) and the Copilot LM proxy (port 8081) start automatically.
+The React UI is served **directly inside the WebView** — no iframe, no browser needed.
 
 > GitHub Copilot must be installed and signed in for LM calls to work.
 
-### Mode 2 — Standalone Flask
-
-Point `.env` at any OpenAI-compatible server (`OPENAI_API_BASE`).
+### Mode 2 — Standalone browser
 
 ```bash
-# Windows shortcut
-start.bat
-
-# Any OS
 python workflow_builder.py
 ```
 
@@ -107,13 +99,8 @@ Open `http://localhost:3456` in a browser.
 
 ### Dev mode (UI hot-reload)
 
-Run Flask and Vite together so React changes reflect instantly without rebuilding:
-
 ```bash
-# Windows
-start_dev.bat
-
-# Manual — two terminals
+# Two terminals
 python workflow_builder.py       # Terminal 1
 cd webui && npm run dev          # Terminal 2 → http://localhost:5173
 ```
@@ -126,11 +113,13 @@ cd webui && npm run dev          # Terminal 2 → http://localhost:5173
 
 ```
 Flask (workflow_builder.py)
-  └── agent_registry.py          scans agents/ on startup, builds metadata
+  └── agent_registry.py          scans agents/ on startup
   └── api/routes/workflows.py    /run_workflow_langgraph
-        └── builds LangGraph StateGraph from the workflow JSON
-        └── each node: copies inputs → calls agent.run(state) → stores outputs
-        └── HITL nodes pause via threading.Event, resume on /approve or /reject
+        └── builds LangGraph StateGraph from nodes + edges
+        └── agent nodes: resolve inputs → call agent.run(state) → store outputs
+        └── timer nodes: time.sleep(seconds)
+        └── decision nodes: eval(condition) → conditional edge routing
+        └── HITL nodes: pause via threading.Event, resume on /approve or /reject
 ```
 
 ### Frontend flow
@@ -148,9 +137,9 @@ React App
 
 1. Agents loaded from `/get_agents` → stored in Zustand
 2. User builds workflow on canvas (nodes + edges)
-3. `buildAgentsPayload()` topologically sorts agent nodes → sends to `/run_workflow_langgraph`
-4. Frontend polls `/workflow/status/<run_id>` every second → updates RunPanel live
-5. On completion, outputs available in the Run tab
+3. `buildWorkflowPayload()` topologically sorts all executable nodes and collects edges
+4. Payload sent to `/run_workflow_langgraph` — includes nodes **and** edges so the backend builds the real graph topology
+5. Frontend polls `/workflow/status/<run_id>` every 1.5s → updates RunPanel live
 
 ### Placeholder system
 
@@ -162,6 +151,23 @@ Reference outputs of upstream agents in any input field:
 
 Click any text input while configuring a node — available upstream outputs appear as inline suggestions automatically.
 
+### Decision (XOR) node
+
+Write a Python expression in the Condition field:
+
+```
+state['addition_agent_output']['result'] > 100
+```
+
+- **True** → follows the **bottom** handle (Yes path)
+- **False** → follows the **right** handle (No path)
+
+The condition is evaluated against the live state dict at runtime.
+
+### Timer node
+
+Enter seconds directly (`30`) or ISO 8601 (`PT1M30S`). The node shows a spinning animation while waiting and turns green when done.
+
 ---
 
 ## Adding a new agent
@@ -169,32 +175,24 @@ Click any text input while configuring a node — available upstream outputs app
 **1. Create `agents/my_agent.py`:**
 
 ```python
-from typing import Optional
 from pydantic import BaseModel, Field
 from agents.base_agent.Agent import Agent
-from utilities import resolve_placeholders_input
 
 class MyAgentInput(BaseModel):
     prompt: str = Field(..., description="Task description",
                         json_schema_extra={"ui_type": "textarea"})
-    mode: str = Field("fast", description="Mode",
-                      json_schema_extra={"ui_type": "dropdown", "options": ["fast", "thorough"]})
-    agent_name: Optional[str] = None  # injected by runtime
 
 class MyAgentOutput(BaseModel):
     result: str
-    summary: str
 
 class MyAgentAgent(Agent):
     def __init__(self):
         super().__init__(name="my_agent", role="...", goal="...", backstory="...")
 
     def run(self, state: dict) -> dict:
-        inp = dict(state.get("my_agent_input", {}))
-        for k in list(inp):
-            inp[k] = resolve_placeholders_input(inp[k], state)
+        inputs = state.get("my_agent_input", {})
         # business logic here
-        state["my_agent_output"] = {"result": "...", "summary": "..."}
+        state["my_agent_output"] = {"result": "..."}
         return state
 ```
 
@@ -206,13 +204,13 @@ AGENT_DESCRIPTIONS = {
 }
 ```
 
-**3.** Restart Flask or call `POST /refresh_agents_metadata` — the agent appears in the sidebar automatically.
+**3.** Restart Flask or click the refresh button in the sidebar — the agent appears automatically.
 
 ### Input field UI types
 
 | `ui_type` | Renders as |
 |-----------|------------|
-| `textbox` | Single-line input (default) |
+| `textbox` | Single-line input |
 | `textarea` | Multi-line — shows output suggestions on focus |
 | `dropdown` | Select — requires `options: [...]` in `json_schema_extra` |
 | `file` | File path input |
@@ -222,27 +220,17 @@ AGENT_DESCRIPTIONS = {
 
 ## Canvas elements
 
-### Workflow Elements (drag from sidebar)
-
-| Category | Element | Use |
-|----------|---------|-----|
-| **Events** | Start | Marks the beginning of a flow |
-| | End | Marks the end of a flow |
-| | Timer | Wait / delay step |
-| | Message | Wait for an incoming message |
-| **Gateways** | XOR | One path chosen based on a condition |
-| | Parallel | All paths fire simultaneously |
+| Category | Element | Description |
+|----------|---------|-------------|
+| **Events** | Timer | Wait / delay — enter seconds or ISO 8601 |
+| **Gateways** | XOR (◆) | One path chosen based on a Python condition |
+| | Parallel (⊕) | All paths fire simultaneously |
 | **Tasks** | User Task | Manual step — pauses for a person |
 | | Service Task | HTTP/API call |
-| | Script Task | Runs a script (Python, JS, Bash, Groovy) |
+| | Script Task | Runs a script |
 | | Send Task | Send email or notification |
 | | MCP Server | Call a Model Context Protocol tool |
 | **Other** | Annotation | Text note on the canvas |
-
-### Connecting nodes
-
-- Drag from the **bottom handle** of one node to the **top handle** of another
-- Click a connector to set a label or condition (`true`/`false` for XOR branches)
 
 ---
 
@@ -251,15 +239,7 @@ AGENT_DESCRIPTIONS = {
 ### `.env`
 
 ```env
-JIRA_TOKEN=
-JIRA_SERVER_URL=https://yourcompany.atlassian.net
-JIRA_EMAIL=
-
-GITHUB_CLOUD_TOKEN=
-GITHUB_ENT_TOKEN=
-
-# Extension mode sets these automatically
-OPENAI_API_BASE=http://localhost:5050
+OPENAI_API_BASE=http://localhost:8081
 OPENAI_API_KEY=none
 PORT=3456
 ```
@@ -270,7 +250,7 @@ PORT=3456
 |---------|---------|-------------|
 | `agenticForge.pythonPath` | `python` | Python executable |
 | `agenticForge.flaskPort` | `3456` | Flask port |
-| `agenticForge.lmServerPort` | `5050` | Copilot LM proxy port |
+| `agenticForge.lmServerPort` | `8081` | Copilot LM proxy port |
 | `agenticForge.lmFamily` | `gpt-5-mini` | Copilot model |
 | `agenticForge.autoStartBackend` | `true` | Auto-start Flask on activation |
 
@@ -286,7 +266,7 @@ PORT=3456
 | GET | `/get_workflow?name=X` | Load a workflow |
 | POST | `/save_workflow/<name>` | Save a workflow |
 | POST | `/generate_workflow_via_copilot` | Generate from natural language |
-| POST | `/run_workflow_langgraph` | Start a run |
+| POST | `/run_workflow_langgraph` | Start a run (accepts `agents` + `edges`) |
 | GET | `/workflow/status/<run_id>` | Poll run status |
 | POST | `/workflow/approve_lg` | Approve HITL pause |
 | POST | `/workflow/reject_lg` | Reject with feedback — agent re-runs |
@@ -294,167 +274,100 @@ PORT=3456
 
 ---
 
-## Troubleshooting & Diagnostics
+## Troubleshooting
 
-### Step 1 — Run the checklist first (especially on a new machine)
+### Black screen in VS Code extension
 
-> The `webui/dist/` build folder is gitignored and must be generated locally. This is the most common cause of a black screen after cloning.
+**Most common causes (in order):**
 
-```bash
-# Confirm Python is available
-python --version
+| Cause | Fix |
+|-------|-----|
+| `webui/dist/` not built | `cd webui && npm install && npm run build` |
+| Flask not running | Check `View → Output → Agentic Forge` for startup errors |
+| Python not found | Set full path: `agenticForge.pythonPath = C:\...\python.exe` |
+| Port 3456 blocked | Change `agenticForge.flaskPort` to `8080` and set `PORT=8080` in `.env` |
 
-# Install Python packages
-pip install -r requirements.txt
+**How the extension serves the UI:**
+The extension reads `webui/dist/index.html` and serves it directly inside the VS Code WebView — no iframe, no browser. If `dist/` is missing you'll see a build instruction screen instead of a black screen.
 
-# Build the React UI (required after every fresh clone)
-cd webui
-npm install
-npm run build
-cd ..
-
-# Install extension dependencies
-cd vscode-extension
-npm install
-cd ..
-```
-
----
-
-### Black screen / blank WebView
-
-The loading screen has a dark background — if Flask never starts the UI never loads and it looks like a black screen.
-
-**Check the Output channel first:**
-`View → Output → Agentic Forge` — Flask startup errors and LM model status are logged here.
-
-**Run Flask manually to see the exact error:**
+**Run Flask manually to see errors:**
 ```bash
 python workflow_builder.py
 ```
 
-**Check if the port is already in use:**
+**Check if port is in use:**
 ```bash
-# Windows
 netstat -ano | findstr 3456
-netstat -ano | findstr 5050
-
-# Kill process using port 3456 (replace PID)
 taskkill /PID <PID> /F
 ```
 
-**If ports are blocked by corporate firewall** — change the ports in VS Code settings (`Ctrl+,` → search "Agentic Forge"):
-- `agenticForge.flaskPort` → try `8080` or `9000`
-- `agenticForge.lmServerPort` → try `8081`
-
-Then update `.env`: `PORT=8080`
-
 ---
 
-### Python not found / wrong Python
+### Python not found
 
-**Set the full Python path in VS Code settings:**
 ```
 agenticForge.pythonPath = C:\Users\yourname\AppData\Local\Programs\Python\Python311\python.exe
 ```
 
-Find your Python path:
+Find your path:
 ```bash
-# Windows
 where python
 py -3 -c "import sys; print(sys.executable)"
 ```
 
-**Virtual environment users** — point `agenticForge.pythonPath` at the venv Python:
-```
-C:\Users\yourname\project\.venv\Scripts\python.exe
-```
-
 ---
 
-### Missing packages / import errors
+### Missing packages
 
 ```bash
-# Check what's installed
-pip list
-
-# Reinstall everything
 pip install -r requirements.txt --force-reinstall
-
-# If pip itself is broken
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
 ```
 
-Check `logs/app.log` for `ImportError` or `ModuleNotFoundError` lines.
+Check `logs/app.log` for `ImportError` lines.
 
 ---
 
-### F5 does nothing / extension won't launch
+### Extension won't launch (F5 does nothing)
 
-- Make sure the **root `Agent Forge UI` folder** is open in VS Code, not a subfolder
-- Check the Terminal panel for TypeScript compile errors
+- Open the **root `Agent Forge UI` folder** in VS Code, not a subfolder
+- Run `cd vscode-extension && npm run compile` — TypeScript errors will be shown
 - Run `cd vscode-extension && npm install` if `node_modules` is missing
-- Try compiling manually: `cd vscode-extension && npm run compile` — errors will be visible
 
 ---
 
-### No Copilot model / LM calls failing
+### No Copilot model
 
-- GitHub Copilot extension must be installed and signed in in the **main** VS Code window
-- Run `Ctrl+Shift+P` → **Agentic Forge: Refresh LM Model**
-- Check `View → Output → Agentic Forge` for `[LM]` lines — it will say which model was cached or why it failed
-- If the model family isn't found it falls back to any available Copilot model automatically
+- GitHub Copilot must be installed and signed in
+- `Ctrl+Shift+P` → **Agentic Forge: Refresh LM Model**
+- Check `View → Output → Agentic Forge` for `[LM]` lines
 
 ---
 
-### UI shows but agents don't appear in sidebar
+### Agents don't appear in sidebar
 
 ```bash
-# Trigger a rescan without restarting Flask
 curl -X POST http://localhost:3456/refresh_agents_metadata
 ```
 
-Or click the refresh button in the UI toolbar.
-
-- Class names must end exactly in `Input`, `Output`, `Agent` (case-sensitive)
-- Check `logs/app.log` for Python import errors in the agent file
-- Confirm the agent file is inside the `agents/` folder (not a subfolder)
-
----
-
-### Workflow run stuck / never completes
-
-- Check `logs/app.log` — each agent logs its start, output, and any exceptions
-- If a node has HITL enabled, the run pauses and waits — check the Run tab for an Approve/Reject prompt
-- Check for placeholder errors: `WARNING: Placeholder` in the log means a `{state['...']}` reference couldn't be resolved — the upstream agent may have failed
+Or click the refresh button (↻) in the sidebar. Agent class names must end in `Agent` (e.g. `MyAgent`).
 
 ---
 
 ### Placeholder not resolving
 
 - Use **single quotes**: `{state['key']['field']}` not double quotes
-- The upstream agent must have completed successfully and written its `_output` key
+- The upstream agent must have completed before this node runs
 - Check `logs/app.log` for `WARNING: Placeholder` lines
 
 ---
 
-### Corporate / office environment issues
+### Corporate / office environment
 
-| Symptom | Likely cause | Fix |
-|---------|-------------|-----|
-| Black screen after F5 | `webui/dist/` not built | Run `cd webui && npm run build` |
-| Flask starts but UI doesn't load | Port 3456 blocked | Change `agenticForge.flaskPort` to `8080` |
-| LM calls fail silently | Port 5050 blocked | Change `agenticForge.lmServerPort` to `8081` |
-| `python` not found | Python not on system PATH | Set full path in `agenticForge.pythonPath` |
-| Packages fail to install | Corporate proxy blocking pip | `pip install -r requirements.txt --proxy http://proxy:port` |
-| `npm install` fails | Corporate npm registry | `npm install --registry https://registry.npmjs.org` |
-
----
-
-### Still stuck?
-
-1. Open `logs/app.log` — the full runtime log is here
-2. Open `View → Output → Agentic Forge` — extension-level errors are here
-3. Open browser DevTools on `http://localhost:3456` (standalone mode) to check console errors
-4. Try standalone mode (`python workflow_builder.py` + browser) to isolate whether the issue is Flask or the VS Code extension
+| Symptom | Fix |
+|---------|-----|
+| Black screen after F5 | Build the UI: `cd webui && npm run build` |
+| Flask starts but UI blank | Port blocked — change `agenticForge.flaskPort` to `8080` |
+| LM calls fail | Change `agenticForge.lmServerPort` to `8082` |
+| `python` not found | Set full path in `agenticForge.pythonPath` |
+| `pip install` fails | `pip install -r requirements.txt --proxy http://proxy:port` |
+| `npm install` fails | `npm install --registry https://registry.npmjs.org` |

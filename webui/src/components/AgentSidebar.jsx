@@ -133,11 +133,8 @@ export default function AgentSidebar() {
 
         <div className="bpmn-group-label">Tasks</div>
         <div className="bpmn-shape-grid">
-          <ShapeButton shapeKey="userTask"    icon="👤" label="User"    title="User Task — manual step requiring a person" />
           <ShapeButton shapeKey="serviceTask" icon="⚙"  label="Service" title="Service Task — automated HTTP/API call" />
           <ShapeButton shapeKey="scriptTask"  icon="📜" label="Script"  title="Script Task — runs a script" />
-          <ShapeButton shapeKey="sendTask"    icon="📤" label="Send"    title="Send Task — send an email or notification" />
-          <ShapeButton shapeKey="mcpTask"     icon="🔌" label="MCP"     title="MCP Server — call a Model Context Protocol tool" />
         </div>
 
         <div className="bpmn-group-label">Other</div>

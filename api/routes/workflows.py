@@ -192,10 +192,13 @@ def _normalize_agent_config(raw: dict) -> dict:
     }
 
 
+_SPECIAL_NODE_TYPES = ("timer", "decision")
+
+
 def _assign_node_ids(agents_list: list[dict]) -> list[dict]:
     """Preserve canvas node_ids if already set; auto-assign for spec-format entries without one."""
     needs_assign = [a for a in agents_list
-                    if not a.get("node_id") and a.get("node_type") not in ("timer", "decision")]
+                    if not a.get("node_id") and a.get("node_type") not in _SPECIAL_NODE_TYPES]
     counts: dict[str, int] = {}
     for a in needs_assign:
         counts[a["agent_name"]] = counts.get(a["agent_name"], 0) + 1
@@ -203,7 +206,7 @@ def _assign_node_ids(agents_list: list[dict]) -> list[dict]:
     occurrences: dict[str, int] = {}
     result = []
     for a in agents_list:
-        if a.get("node_id") or a.get("node_type") in ("timer", "decision"):
+        if a.get("node_id") or a.get("node_type") in _SPECIAL_NODE_TYPES:
             result.append(a)
             continue
         name = a["agent_name"]
@@ -494,7 +497,7 @@ def run_workflow_langgraph():
     }
 
     for agent_cfg in agents_with_ids:
-        if agent_cfg.get("node_type") in ("timer", "decision"):
+        if agent_cfg.get("node_type") in _SPECIAL_NODE_TYPES:
             continue
         initial_state = parse_dynamic_agent_input_format(agent_cfg, initial_state)
 

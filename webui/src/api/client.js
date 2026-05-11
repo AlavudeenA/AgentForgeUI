@@ -1,4 +1,7 @@
-const BASE = "";
+// In VS Code webview mode the extension injects window.__FLASK_PORT__
+// so API calls go to the Flask server as absolute URLs.
+// In browser/dev mode it's undefined and relative paths are used.
+const BASE = window.__FLASK_PORT__ ? `http://localhost:${window.__FLASK_PORT__}` : "";
 
 async function fetchJSON(url, options = {}) {
   const res = await fetch(BASE + url, {

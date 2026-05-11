@@ -143,13 +143,7 @@ export const useWorkflowStore = create((set, get) => ({
     return id;
   },
 
-  addMcpTaskNode: (position) => {
-    const id = newId();
-    set((s) => ({ nodes: [...s.nodes, { id, type: "mcpTaskNode", position, data: { label: "MCP Server", serverUrl: "", toolName: "", arguments: "", outputKey: "mcp_result" } }], selectedNodeId: id, selectedEdgeId: null }));
-    return id;
-  },
-
-  updateNodeData: (id, patch) =>
+updateNodeData: (id, patch) =>
     set((s) => ({
       nodes: s.nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, ...patch } } : n)),
     })),
@@ -229,7 +223,7 @@ export const useWorkflowStore = create((set, get) => ({
         return { node_type: "decision", agent_name: "__decision__", node_id: n.id,
                  condition: n.data.condition || "False", inputs: {}, requires_approval: false };
       }
-      return { agent_name: n.data.agentName, node_id: n.id,
+return { agent_name: n.data.agentName, node_id: n.id,
                inputs: n.data.inputs || {}, requires_approval: n.data.requires_approval || false };
     });
 

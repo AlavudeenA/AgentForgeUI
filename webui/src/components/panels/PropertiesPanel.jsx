@@ -3,7 +3,7 @@ import { useWorkflowStore } from "../../store/useWorkflowStore.js";
 
 const EVENT_TYPES = ["startEventNode", "endEventNode", "timerEventNode", "messageEventNode"];
 const GATEWAY_TYPES = ["decisionNode", "parallelGatewayNode"];
-const TASK_TYPES = ["userTaskNode", "serviceTaskNode", "scriptTaskNode", "sendTaskNode", "mcpTaskNode"];
+const TASK_TYPES = ["userTaskNode", "serviceTaskNode", "scriptTaskNode", "sendTaskNode"];
 
 function useOutputOptions() {
   const nodes = useWorkflowStore((s) => s.nodes);
@@ -314,23 +314,6 @@ function TaskPanel({ node }) {
             </PropField>
             <PropField label="Script" hint="Code to execute — use state dict for inputs/outputs">
               <textarea className="prop-textarea" rows={8} value={data.script || ""} placeholder={`# Python example\nresult = state.get('prev_output', {}).get('value', '')\nstate['script_result'] = result.upper()`} onChange={(e) => updateNodeData(id, { script: e.target.value })} style={{ fontFamily: "monospace", fontSize: "0.8rem" }} />
-            </PropField>
-          </>
-        )}
-
-        {type === "mcpTaskNode" && (
-          <>
-            <PropField label="MCP Server URL" hint="WebSocket or HTTP endpoint of the MCP server">
-              <input className="prop-input" value={data.serverUrl || ""} placeholder="ws://localhost:3000 or https://mcp.example.com" onChange={(e) => updateNodeData(id, { serverUrl: e.target.value })} />
-            </PropField>
-            <PropField label="Tool Name" hint="Name of the tool to call on the MCP server">
-              <input className="prop-input" value={data.toolName || ""} placeholder="e.g. search, read_file, execute_code" onChange={(e) => updateNodeData(id, { toolName: e.target.value })} />
-            </PropField>
-            <PropField label="Arguments (JSON)" hint="Input arguments for the tool — supports {state[...]} placeholders">
-              <textarea className="prop-textarea" rows={4} value={data.arguments || ""} placeholder={'{"query": "search term"}'} onChange={(e) => updateNodeData(id, { arguments: e.target.value })} style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem" }} />
-            </PropField>
-            <PropField label="Output Key" hint="State key where the tool result will be stored">
-              <input className="prop-input" value={data.outputKey || ""} placeholder="mcp_result" onChange={(e) => updateNodeData(id, { outputKey: e.target.value })} />
             </PropField>
           </>
         )}
