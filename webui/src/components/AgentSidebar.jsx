@@ -125,7 +125,6 @@ export default function AgentSidebar() {
           <ShapeButton shapeKey="startEvent" icon="▶" label="Start" title="Start Event — begins the workflow" />
           <ShapeButton shapeKey="endEvent"   icon="■" label="End"   title="End Event — terminates the workflow" />
           <ShapeButton shapeKey="timerEvent" icon="⏱" label="Timer" title="Timer Event — wait / delay" />
-          <ShapeButton shapeKey="messageEvent" icon="✉" label="Message" title="Message Event — receive a message" />
         </div>
 
         <div className="bpmn-group-label">Gateways</div>
