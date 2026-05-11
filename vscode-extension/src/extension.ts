@@ -163,7 +163,7 @@ export async function activate(
     outputChannel.appendLine(
       "[Extension] autoStartBackend=true, launching Flask…",
     );
-    startFlaskBackend(context.extensionPath, outputChannel);
+    void startFlaskBackend(context.extensionPath, outputChannel);
   }
 
   // ── Commands ──────────────────────────────────────────────────────────────
@@ -207,19 +207,20 @@ export async function activate(
   context.subscriptions.push(
     vscode.commands.registerCommand("agentic-forge.startBackend", () => {
       outputChannel.show(true);
-      const proc = startFlaskBackend(context.extensionPath, outputChannel);
-      if (proc) {
-        vscode.window
-          .showInformationMessage(
-            `Agentic Forge backend starting on port ${flaskPort}…`,
-            "Open UI",
-          )
-          .then((choice) => {
-            if (choice === "Open UI") {
-              vscode.commands.executeCommand("agentic-forge.openUI");
-            }
-          });
-      }
+      startFlaskBackend(context.extensionPath, outputChannel).then((proc) => {
+        if (proc) {
+          vscode.window
+            .showInformationMessage(
+              `Agentic Forge backend starting on port ${flaskPort}…`,
+              "Open UI",
+            )
+            .then((choice) => {
+              if (choice === "Open UI") {
+                vscode.commands.executeCommand("agentic-forge.openUI");
+              }
+            });
+        }
+      });
     }),
   );
 

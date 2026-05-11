@@ -2,232 +2,228 @@
   "name": "my-workflow",
   "nodes": [
     {
-      "id": "node-2-1778421882443",
-      "type": "agentNode",
-      "position": {
-        "x": -32,
-        "y": -32
-      },
       "data": {
-        "agentName": "github_createpullRequest_agent",
-        "label": "Github CreatepullRequest Agent",
-        "description": "Creates a pull request on GitHub with a specified branch, title, and description",
+        "agentName": "addition_agent",
+        "description": "Adds two numbers together after a 5-second delay",
         "inputFormat": {
-          "base_branch": {
-            "default": "main",
-            "depends_on": null,
-            "description": "Target branch for the PR",
-            "options": [],
-            "required": false,
-            "ui_type": "textbox"
-          },
-          "head_branch": {
+          "operand_a": {
             "default": "",
             "depends_on": null,
-            "description": "Source branch for the PR",
+            "description": "First number",
             "options": [],
             "required": true,
             "ui_type": "textbox"
           },
-          "local_repo_path": {
+          "operand_b": {
             "default": "",
             "depends_on": null,
-            "description": "Local path to push before creating PR (leave blank to skip push)",
-            "options": [],
-            "required": false,
-            "ui_type": "textbox"
-          },
-          "pr_body": {
-            "default": "",
-            "depends_on": null,
-            "description": "Pull request description / body",
-            "options": [],
-            "required": false,
-            "ui_type": "textarea"
-          },
-          "pr_title": {
-            "default": "",
-            "depends_on": null,
-            "description": "Pull request title",
+            "description": "Second number",
             "options": [],
             "required": true,
             "ui_type": "textbox"
-          },
-          "repo": {
-            "default": "",
-            "depends_on": null,
-            "description": "GitHub repo in org/name format (e.g. myorg/myrepo)",
-            "options": [],
-            "required": true,
-            "ui_type": "textbox"
-          },
-          "token_type": {
-            "default": "cloud",
-            "depends_on": null,
-            "description": "Which GitHub token to use",
-            "options": [
-              "cloud",
-              "enterprise"
-            ],
-            "required": false,
-            "ui_type": "dropdown"
           }
         },
         "inputOrder": [
-          "repo",
-          "head_branch",
-          "base_branch",
-          "pr_title",
-          "pr_body",
-          "local_repo_path",
-          "token_type"
+          "operand_a",
+          "operand_b"
+        ],
+        "inputs": {
+          "operand_a": "2",
+          "operand_b": "5"
+        },
+        "label": "Addition Agent",
+        "outputFormat": {
+          "result": "<class 'float'>"
+        },
+        "requires_approval": false
+      },
+      "dragging": false,
+      "id": "node-1-1778521544888",
+      "measured": {
+        "height": 81,
+        "width": 140
+      },
+      "position": {
+        "x": -16,
+        "y": 64
+      },
+      "selected": false,
+      "type": "agentNode"
+    },
+    {
+      "data": {
+        "agentName": "subtraction_agent",
+        "description": "Subtracts the second number from the first after a 5-second delay",
+        "inputFormat": {
+          "operand_a": {
+            "default": "",
+            "depends_on": null,
+            "description": "First number",
+            "options": [],
+            "required": true,
+            "ui_type": "textbox"
+          },
+          "operand_b": {
+            "default": "",
+            "depends_on": null,
+            "description": "Second number",
+            "options": [],
+            "required": true,
+            "ui_type": "textbox"
+          }
+        },
+        "inputOrder": [
+          "operand_a",
+          "operand_b"
+        ],
+        "inputs": {
+          "operand_a": "{state['addition_agent_output']['result']}",
+          "operand_b": "5"
+        },
+        "label": "Subtraction Agent",
+        "outputFormat": {
+          "result": "<class 'float'>"
+        },
+        "requires_approval": false
+      },
+      "id": "node-2-1778521555831",
+      "measured": {
+        "height": 81,
+        "width": 140
+      },
+      "position": {
+        "x": 80,
+        "y": 192
+      },
+      "selected": false,
+      "type": "agentNode"
+    },
+    {
+      "data": {
+        "agentName": "multiplication_agent",
+        "description": "Multiplies two numbers together after a 5-second delay",
+        "inputFormat": {
+          "operand_a": {
+            "default": "",
+            "depends_on": null,
+            "description": "First number",
+            "options": [],
+            "required": true,
+            "ui_type": "textbox"
+          },
+          "operand_b": {
+            "default": "",
+            "depends_on": null,
+            "description": "Second number",
+            "options": [],
+            "required": true,
+            "ui_type": "textbox"
+          }
+        },
+        "inputOrder": [
+          "operand_a",
+          "operand_b"
+        ],
+        "inputs": {
+          "operand_a": "{state['subtraction_agent_output']['result']}",
+          "operand_b": "5"
+        },
+        "label": "Multiplication Agent",
+        "outputFormat": {
+          "result": "<class 'float'>"
+        },
+        "requires_approval": false
+      },
+      "id": "node-3-1778521574508",
+      "measured": {
+        "height": 81,
+        "width": 140
+      },
+      "position": {
+        "x": 224,
+        "y": 96
+      },
+      "selected": false,
+      "type": "agentNode"
+    },
+    {
+      "id": "node-1-1778522199625",
+      "type": "agentNode",
+      "position": {
+        "x": 288,
+        "y": 256
+      },
+      "data": {
+        "agentName": "display_output_agent",
+        "label": "Display Output Agent",
+        "description": "Displays a mapped value as the final workflow output",
+        "inputFormat": {
+          "value": {
+            "default": "",
+            "depends_on": null,
+            "description": "Value to display as the final workflow output",
+            "options": [],
+            "required": true,
+            "ui_type": "textbox"
+          }
+        },
+        "inputOrder": [
+          "value"
         ],
         "outputFormat": {
-          "message": "<class 'str'>",
-          "pr_url": "<class 'str'>",
-          "success": "<class 'bool'>"
+          "result": "<class 'str'>"
         },
         "inputs": {
-          "repo": "",
-          "head_branch": "",
-          "base_branch": "main",
-          "pr_title": "",
-          "pr_body": "",
-          "local_repo_path": "",
-          "token_type": "cloud"
+          "value": "{state['multiplication_agent_output']['result']}"
         },
         "requires_approval": false
       },
       "measured": {
-        "width": 172,
+        "width": 140,
         "height": 81
       },
-      "selected": false,
-      "dragging": false
-    },
-    {
-      "id": "node-3-1778421890745",
-      "type": "agentNode",
-      "position": {
-        "x": 256,
-        "y": 240
-      },
-      "data": {
-        "agentName": "github_createpullRequest_agent",
-        "label": "Github CreatepullRequest Agent",
-        "description": "Creates a pull request on GitHub with a specified branch, title, and description",
-        "inputFormat": {
-          "base_branch": {
-            "default": "main",
-            "depends_on": null,
-            "description": "Target branch for the PR",
-            "options": [],
-            "required": false,
-            "ui_type": "textbox"
-          },
-          "head_branch": {
-            "default": "",
-            "depends_on": null,
-            "description": "Source branch for the PR",
-            "options": [],
-            "required": true,
-            "ui_type": "textbox"
-          },
-          "local_repo_path": {
-            "default": "",
-            "depends_on": null,
-            "description": "Local path to push before creating PR (leave blank to skip push)",
-            "options": [],
-            "required": false,
-            "ui_type": "textbox"
-          },
-          "pr_body": {
-            "default": "",
-            "depends_on": null,
-            "description": "Pull request description / body",
-            "options": [],
-            "required": false,
-            "ui_type": "textarea"
-          },
-          "pr_title": {
-            "default": "",
-            "depends_on": null,
-            "description": "Pull request title",
-            "options": [],
-            "required": true,
-            "ui_type": "textbox"
-          },
-          "repo": {
-            "default": "",
-            "depends_on": null,
-            "description": "GitHub repo in org/name format (e.g. myorg/myrepo)",
-            "options": [],
-            "required": true,
-            "ui_type": "textbox"
-          },
-          "token_type": {
-            "default": "cloud",
-            "depends_on": null,
-            "description": "Which GitHub token to use",
-            "options": [
-              "cloud",
-              "enterprise"
-            ],
-            "required": false,
-            "ui_type": "dropdown"
-          }
-        },
-        "inputOrder": [
-          "repo",
-          "head_branch",
-          "base_branch",
-          "pr_title",
-          "pr_body",
-          "local_repo_path",
-          "token_type"
-        ],
-        "outputFormat": {
-          "message": "<class 'str'>",
-          "pr_url": "<class 'str'>",
-          "success": "<class 'bool'>"
-        },
-        "inputs": {
-          "repo": "",
-          "head_branch": "",
-          "base_branch": "main",
-          "pr_title": "",
-          "pr_body": "",
-          "local_repo_path": "",
-          "token_type": "cloud"
-        },
-        "requires_approval": false
-      },
-      "measured": {
-        "width": 172,
-        "height": 81
-      },
-      "selected": false,
-      "dragging": false
-    },
-    {
-      "id": "node-4-1778421895806",
-      "type": "decisionNode",
-      "position": {
-        "x": 176,
-        "y": -16
-      },
-      "data": {
-        "label": "Decision",
-        "condition": "",
-        "description": "Conditional branch"
-      },
-      "measured": {
-        "width": 120,
-        "height": 70
-      },
-      "selected": false,
-      "dragging": false
+      "selected": true
     }
   ],
-  "edges": []
+  "edges": [
+    {
+      "animated": false,
+      "data": {
+        "condition": "",
+        "label": ""
+      },
+      "id": "edge-1778521572030",
+      "source": "node-1-1778521544888",
+      "sourceHandle": null,
+      "target": "node-2-1778521555831",
+      "targetHandle": null,
+      "type": "customEdge"
+    },
+    {
+      "animated": false,
+      "data": {
+        "condition": "",
+        "label": ""
+      },
+      "id": "edge-1778521594708",
+      "source": "node-2-1778521555831",
+      "sourceHandle": null,
+      "target": "node-3-1778521574508",
+      "targetHandle": null,
+      "type": "customEdge"
+    },
+    {
+      "type": "customEdge",
+      "animated": false,
+      "data": {
+        "label": "",
+        "condition": ""
+      },
+      "source": "node-3-1778521574508",
+      "sourceHandle": null,
+      "target": "node-1-1778522199625",
+      "targetHandle": null,
+      "id": "edge-1778522201149"
+    }
+  ]
 }

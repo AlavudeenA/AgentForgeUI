@@ -1,23 +1,6 @@
 import { useState } from "react";
+import { api } from "../api/client.js";
 import { useWorkflowStore } from "../store/useWorkflowStore.js";
-
-function agentColor(name) {
-  if (name.includes("jira")) return "#0052cc";
-  if (name.includes("github")) return "#24292f";
-  if (name.includes("copilot") || name.includes("llm")) return "#6366f1";
-  if (name.includes("test")) return "#10b981";
-  if (name.includes("deploy")) return "#f59e0b";
-  return "#4f7fff";
-}
-
-function agentIcon(name) {
-  if (name.includes("jira")) return "🎫";
-  if (name.includes("github")) return "🐙";
-  if (name.includes("copilot") || name.includes("llm")) return "🤖";
-  if (name.includes("test")) return "🧪";
-  if (name.includes("deploy")) return "🚀";
-  return "⚙";
-}
 
 function AgentCard({ agent }) {
   const onDragStart = (e) => {
@@ -31,14 +14,11 @@ function AgentCard({ agent }) {
       draggable
       onDragStart={onDragStart}
       title={agent.description}
-      style={{ "--agent-color": agentColor(agent.name) }}
     >
-      <div className="agent-card__icon">{agentIcon(agent.name)}</div>
       <div className="agent-card__info">
         <div className="agent-card__name">{agent.name.replace(/_/g, " ")}</div>
         <div className="agent-card__desc">{agent.description}</div>
       </div>
-      <div className="agent-card__drag-hint">⠿</div>
     </div>
   );
 }
@@ -64,7 +44,22 @@ function ShapeButton({ shapeKey, icon, label, title }) {
 
 export default function AgentSidebar() {
   const agents = useWorkflowStore((s) => s.agents);
+  const setAgents = useWorkflowStore((s) => s.setAgents);
   const [search, setSearch] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await api.refreshAgentsMetadata();
+      const updated = await api.getAgents();
+      setAgents(updated);
+    } catch (e) {
+      console.error("Failed to refresh agents:", e);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const filtered = agents.filter(
     (a) =>
@@ -76,7 +71,27 @@ export default function AgentSidebar() {
     <aside className="agent-sidebar">
       <div className="agent-sidebar__header">
         <span className="agent-sidebar__title">Agents</span>
-        <span className="agent-sidebar__count">{agents.length}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span className="agent-sidebar__count">{agents.length}</span>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            title="Reload agents from server"
+            style={{
+              background: "none",
+              border: "none",
+              cursor: refreshing ? "not-allowed" : "pointer",
+              color: "var(--text-muted)",
+              fontSize: "0.85rem",
+              padding: "2px 4px",
+              borderRadius: "4px",
+              lineHeight: 1,
+              opacity: refreshing ? 0.5 : 1,
+            }}
+          >
+            {refreshing ? "…" : "↻"}
+          </button>
+        </div>
       </div>
 
       <div className="agent-sidebar__search">

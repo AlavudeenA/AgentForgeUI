@@ -100,6 +100,10 @@ export default function RunStatusOverlay() {
 
   const agentNodes = nodes.filter((n) => n.type === "agentNode");
 
+  const displayNode = agentNodes.find((n) => n.data?.agentName === "display_output_agent");
+  const displayOutput = displayNode ? runOutputs[displayNode.data.agentName] : null;
+  const showFinalResult = runCompleted && displayOutput?.result !== undefined;
+
   return (
     <div className="run-overlay">
       <div className="run-overlay__header">
@@ -115,16 +119,33 @@ export default function RunStatusOverlay() {
 
       {runError && <div className="run-overlay__error">{runError}</div>}
 
+      {showFinalResult && (
+        <div style={{
+          margin: "0.75rem 0.75rem 0",
+          padding: "0.875rem 1rem",
+          background: "linear-gradient(135deg, rgba(16,185,129,0.12), rgba(79,127,255,0.08))",
+          border: "1px solid rgba(16,185,129,0.35)",
+          borderRadius: "8px",
+        }}>
+          <div style={{ fontSize: "0.7rem", fontWeight: 600, color: "#10b981", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.4rem" }}>
+            Final Output
+          </div>
+          <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "#f1f5f9", wordBreak: "break-all" }}>
+            {displayOutput.result}
+          </div>
+        </div>
+      )}
+
       <div className="run-overlay__rows">
         {agentNodes.map((n) => {
-          const nodeId = n.id;
-          const status = runStatus[nodeId] || "not-started";
-          const output = runOutputs[nodeId];
+          const agentName = n.data?.agentName;
+          const status = runStatus[agentName] || "not-started";
+          const output = runOutputs[agentName];
           return (
             <AgentStatusRow
-              key={nodeId}
-              nodeId={nodeId}
-              agentName={n.data?.agentName || nodeId}
+              key={n.id}
+              nodeId={agentName}
+              agentName={agentName || n.id}
               status={status}
               output={output}
               error={null}

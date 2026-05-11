@@ -1,6 +1,7 @@
 AGENT_DESCRIPTIONS = {
-    "jira_story_details_agent": "Fetches JIRA story details including title, description, acceptance criteria, and attachments",
-    "copilot_agent": "AI-powered code generation agent — takes requirements and produces implementation code",
-    "github_cloneandsync_agent": "Clones a GitHub repository and syncs it with the latest upstream changes",
-    "github_createpullRequest_agent": "Creates a pull request on GitHub with a specified branch, title, and description",
+    "addition_agent": "Adds two numbers together after a 5-second delay",
+    "subtraction_agent": "Subtracts the second number from the first after a 5-second delay",
+    "multiplication_agent": "Multiplies two numbers together after a 5-second delay",
+    "division_agent": "Divides the first number by the second after a 5-second delay",
+    "display_output_agent": "Displays a mapped value as the final workflow output",
 }
