@@ -1,0 +1,56 @@
+[
+  {
+    "name": "addition_agent",
+    "description": "Adds two numbers together after a 5-second delay",
+    "inputs": [
+      "operand_a",
+      "operand_b"
+    ],
+    "outputs": [
+      "result"
+    ]
+  },
+  {
+    "name": "display_output_agent",
+    "description": "Displays a mapped value as the final workflow output",
+    "inputs": [
+      "value"
+    ],
+    "outputs": [
+      "result"
+    ]
+  },
+  {
+    "name": "division_agent",
+    "description": "Divides the first number by the second after a 5-second delay",
+    "inputs": [
+      "operand_a",
+      "operand_b"
+    ],
+    "outputs": [
+      "result"
+    ]
+  },
+  {
+    "name": "multiplication_agent",
+    "description": "Multiplies two numbers together after a 5-second delay",
+    "inputs": [
+      "operand_a",
+      "operand_b"
+    ],
+    "outputs": [
+      "result"
+    ]
+  },
+  {
+    "name": "subtraction_agent",
+    "description": "Subtracts the second number from the first after a 5-second delay",
+    "inputs": [
+      "operand_a",
+      "operand_b"
+    ],
+    "outputs": [
+      "result"
+    ]
+  }
+]

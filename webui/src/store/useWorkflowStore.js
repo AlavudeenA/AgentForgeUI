@@ -97,7 +97,7 @@ export const useWorkflowStore = create((set, get) => ({
 
   addTimerEventNode: (position) => {
     const id = newId();
-    set((s) => ({ nodes: [...s.nodes, { id, type: "timerEventNode", position, data: { label: "Timer", timerType: "duration", timerValue: "PT1H" } }], selectedNodeId: id, selectedEdgeId: null }));
+    set((s) => ({ nodes: [...s.nodes, { id, type: "timerEventNode", position, data: { label: "Timer", timerType: "duration", timerValue: "5" } }], selectedNodeId: id, selectedEdgeId: null }));
     return id;
   },
 
@@ -219,13 +219,25 @@ export const useWorkflowStore = create((set, get) => ({
 
     return order
       .map((id) => nodeMap[id])
-      .filter((n) => n && n.type === "agentNode")
-      .map((n) => ({
-        agent_name: n.data.agentName,
-        node_id: n.id,
-        inputs: n.data.inputs || {},
-        requires_approval: n.data.requires_approval || false,
-      }));
+      .filter((n) => n && (n.type === "agentNode" || n.type === "timerEventNode"))
+      .map((n) => {
+        if (n.type === "timerEventNode") {
+          return {
+            node_type: "timer",
+            agent_name: "__timer__",
+            node_id: n.id,
+            timer_value: n.data.timerValue || "PT5S",
+            inputs: {},
+            requires_approval: false,
+          };
+        }
+        return {
+          agent_name: n.data.agentName,
+          node_id: n.id,
+          inputs: n.data.inputs || {},
+          requires_approval: n.data.requires_approval || false,
+        };
+      });
   },
 
   // ── Active run ────────────────────────────────────────────────────────────

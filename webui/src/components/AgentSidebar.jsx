@@ -122,8 +122,6 @@ export default function AgentSidebar() {
       <div className="agent-sidebar__shapes">
         <div className="bpmn-group-label">Events</div>
         <div className="bpmn-shape-grid">
-          <ShapeButton shapeKey="startEvent" icon="▶" label="Start" title="Start Event — begins the workflow" />
-          <ShapeButton shapeKey="endEvent"   icon="■" label="End"   title="End Event — terminates the workflow" />
           <ShapeButton shapeKey="timerEvent" icon="⏱" label="Timer" title="Timer Event — wait / delay" />
         </div>
 

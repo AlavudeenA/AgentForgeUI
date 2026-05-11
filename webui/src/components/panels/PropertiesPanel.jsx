@@ -185,8 +185,8 @@ function EventPanel({ node }) {
                 <option value="date">Date</option>
               </select>
             </PropField>
-            <PropField label="Timer Value" hint="ISO 8601: PT1H = 1 hour, P1D = 1 day, R3/PT10M = repeat 3× every 10 min">
-              <input className="prop-input" value={data.timerValue || ""} placeholder="PT1H" onChange={(e) => updateNodeData(id, { timerValue: e.target.value })} />
+            <PropField label="Timer Value" hint="Seconds (e.g. 30) or ISO 8601 (e.g. PT1M30S, PT1H)">
+              <input className="prop-input" value={data.timerValue || ""} placeholder="e.g. 30" onChange={(e) => updateNodeData(id, { timerValue: e.target.value })} />
             </PropField>
           </>
         )}

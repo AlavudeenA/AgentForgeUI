@@ -3,7 +3,9 @@ import importlib.util
 import inspect
 import json
 import os
+import re
 import threading
+import time
 import uuid
 
 from flask import Blueprint, current_app, jsonify, request, send_from_directory
@@ -191,19 +193,76 @@ def _normalize_agent_config(raw: dict) -> dict:
 
 
 def _assign_node_ids(agents_list: list[dict]) -> list[dict]:
-    """Give every agent occurrence a unique node_id."""
+    """Give every agent occurrence a unique node_id. Timer nodes keep their canvas node_id."""
     counts: dict[str, int] = {}
     for a in agents_list:
-        counts[a["agent_name"]] = counts.get(a["agent_name"], 0) + 1
+        if a.get("node_type") != "timer":
+            counts[a["agent_name"]] = counts.get(a["agent_name"], 0) + 1
 
     occurrences: dict[str, int] = {}
     result = []
     for a in agents_list:
+        if a.get("node_type") == "timer":
+            result.append(a)
+            continue
         name = a["agent_name"]
         occurrences[name] = occurrences.get(name, 0) + 1
         node_id = name if counts[name] == 1 else f"{name}__{occurrences[name]}"
         result.append({**a, "node_id": node_id})
     return result
+
+
+def _parse_iso8601_duration(value: str) -> float:
+    """Parse duration to seconds. Accepts plain numbers (seconds) or ISO 8601 (PT5S, PT1M, PT1H)."""
+    v = value.strip()
+    try:
+        return float(v)
+    except ValueError:
+        pass
+    pattern = re.compile(
+        r"P(?:(?P<days>\d+)D)?"
+        r"(?:T(?:(?P<hours>\d+)H)?(?:(?P<minutes>\d+)M)?(?:(?P<seconds>\d+(?:\.\d+)?)S)?)?"
+    )
+    match = pattern.fullmatch(v.upper())
+    if not match:
+        raise ValueError(f"Invalid duration: {value!r} — use seconds (e.g. 30) or ISO 8601 (e.g. PT1M30S)")
+    parts = match.groupdict(default="0")
+    return (
+        float(parts["days"]) * 86400
+        + float(parts["hours"]) * 3600
+        + float(parts["minutes"]) * 60
+        + float(parts["seconds"])
+    )
+
+
+def _make_timer_node(timer_value: str, node_id: str, run_id: str):
+    def node_fn(state: dict) -> dict:
+        run = LANGGRAPH_RUNS.get(run_id, {})
+
+        if state.get("agent_status", {}).get(node_id) == "completed":
+            return state
+
+        state.setdefault("agent_status", {})[node_id] = "in-progress"
+        logger.info(f"AGENT_STATUS|run_id={run_id}|agent={node_id}|status=in-progress|timer={timer_value}")
+        if run:
+            run["state"] = state
+
+        try:
+            seconds = _parse_iso8601_duration(timer_value)
+            logger.info(f"Timer {node_id}: sleeping {seconds:.1f}s ({timer_value})")
+            time.sleep(seconds)
+            state["agent_status"][node_id] = "completed"
+            logger.info(f"AGENT_STATUS|run_id={run_id}|agent={node_id}|status=completed")
+        except Exception as exc:
+            state["agent_status"][node_id] = "error"
+            state[f"{node_id}_error"] = str(exc)
+            logger.error(f"AGENT_STATUS|run_id={run_id}|agent={node_id}|status=error|error={exc}")
+
+        if run:
+            run["state"] = state
+        return state
+
+    return node_fn
 
 
 def _load_agent_instance(agent_name: str) -> Agent:
@@ -366,7 +425,8 @@ def run_workflow_langgraph():
     }
 
     for agent_cfg in agents_with_ids:
-        initial_state = parse_dynamic_agent_input_format(agent_cfg, initial_state)
+        if agent_cfg.get("node_type") != "timer":
+            initial_state = parse_dynamic_agent_input_format(agent_cfg, initial_state)
 
     LANGGRAPH_RUNS[run_id] = {
         "state": initial_state,
@@ -386,13 +446,17 @@ def run_workflow_langgraph():
         node_id = agent_cfg["node_id"]
         requires_approval = agent_cfg.get("requires_approval", False)
 
-        try:
-            agent_instance = _load_agent_instance(agent_name)
-        except Exception as exc:
-            del LANGGRAPH_RUNS[run_id]
-            return jsonify({"error": f"Failed to load agent '{agent_name}': {exc}"}), 500
+        if agent_cfg.get("node_type") == "timer":
+            timer_value = agent_cfg.get("timer_value", "PT5S")
+            node_fn = _make_timer_node(timer_value, node_id, run_id)
+        else:
+            try:
+                agent_instance = _load_agent_instance(agent_name)
+            except Exception as exc:
+                del LANGGRAPH_RUNS[run_id]
+                return jsonify({"error": f"Failed to load agent '{agent_name}': {exc}"}), 500
+            node_fn = _make_node(agent_instance, agent_name, node_id, run_id, requires_approval)
 
-        node_fn = _make_node(agent_instance, agent_name, node_id, run_id, requires_approval)
         builder.add_node(node_id, node_fn)
         node_ids.append(node_id)
 

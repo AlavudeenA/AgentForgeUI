@@ -35,17 +35,17 @@
         "outputFormat": {
           "result": "<class 'float'>"
         },
-        "requires_approval": false
+        "requires_approval": true
       },
       "dragging": false,
       "id": "node-1-1778521544888",
       "measured": {
-        "height": 81,
-        "width": 140
+        "width": 140,
+        "height": 94
       },
       "position": {
-        "x": -16,
-        "y": 64
+        "x": -32,
+        "y": -32
       },
       "selected": false,
       "type": "agentNode"
@@ -147,15 +147,8 @@
       "type": "agentNode"
     },
     {
-      "id": "node-1-1778522199625",
-      "type": "agentNode",
-      "position": {
-        "x": 288,
-        "y": 256
-      },
       "data": {
         "agentName": "display_output_agent",
-        "label": "Display Output Agent",
         "description": "Displays a mapped value as the final workflow output",
         "inputFormat": {
           "value": {
@@ -170,35 +163,47 @@
         "inputOrder": [
           "value"
         ],
-        "outputFormat": {
-          "result": "<class 'str'>"
-        },
         "inputs": {
           "value": "{state['multiplication_agent_output']['result']}"
         },
+        "label": "Display Output Agent",
+        "outputFormat": {
+          "result": "<class 'str'>"
+        },
         "requires_approval": false
       },
+      "id": "node-1-1778522199625",
       "measured": {
-        "width": 140,
-        "height": 81
+        "height": 81,
+        "width": 140
       },
-      "selected": true
+      "position": {
+        "x": 288,
+        "y": 256
+      },
+      "selected": false,
+      "type": "agentNode"
+    },
+    {
+      "data": {
+        "label": "Timer",
+        "timerType": "duration",
+        "timerValue": "5"
+      },
+      "id": "node-1-1778523588782",
+      "measured": {
+        "height": 98,
+        "width": 72
+      },
+      "position": {
+        "x": 32,
+        "y": 96
+      },
+      "selected": true,
+      "type": "timerEventNode"
     }
   ],
   "edges": [
-    {
-      "animated": false,
-      "data": {
-        "condition": "",
-        "label": ""
-      },
-      "id": "edge-1778521572030",
-      "source": "node-1-1778521544888",
-      "sourceHandle": null,
-      "target": "node-2-1778521555831",
-      "targetHandle": null,
-      "type": "customEdge"
-    },
     {
       "animated": false,
       "data": {
@@ -213,17 +218,43 @@
       "type": "customEdge"
     },
     {
-      "type": "customEdge",
       "animated": false,
       "data": {
-        "label": "",
-        "condition": ""
+        "condition": "",
+        "label": ""
       },
+      "id": "edge-1778522201149",
       "source": "node-3-1778521574508",
       "sourceHandle": null,
       "target": "node-1-1778522199625",
       "targetHandle": null,
-      "id": "edge-1778522201149"
+      "type": "customEdge"
+    },
+    {
+      "animated": false,
+      "data": {
+        "condition": "",
+        "label": ""
+      },
+      "id": "edge-1778523592307",
+      "source": "node-1-1778521544888",
+      "sourceHandle": null,
+      "target": "node-1-1778523588782",
+      "targetHandle": null,
+      "type": "customEdge"
+    },
+    {
+      "animated": false,
+      "data": {
+        "condition": "",
+        "label": ""
+      },
+      "id": "edge-1778523594186",
+      "source": "node-1-1778523588782",
+      "sourceHandle": null,
+      "target": "node-2-1778521555831",
+      "targetHandle": null,
+      "type": "customEdge"
     }
   ]
 }

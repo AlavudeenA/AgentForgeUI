@@ -10,8 +10,6 @@ import {
 import { useWorkflowStore } from "../store/useWorkflowStore.js";
 import AgentNode from "./nodes/AgentNode.jsx";
 import DecisionNode from "./nodes/DecisionNode.jsx";
-import StartEventNode from "./nodes/StartEventNode.jsx";
-import EndEventNode from "./nodes/EndEventNode.jsx";
 import TimerEventNode from "./nodes/TimerEventNode.jsx";
 import MessageEventNode from "./nodes/MessageEventNode.jsx";
 import ParallelGatewayNode from "./nodes/ParallelGatewayNode.jsx";
@@ -26,8 +24,6 @@ import CustomEdge from "./edges/CustomEdge.jsx";
 const NODE_TYPES = {
   agentNode: AgentNode,
   decisionNode: DecisionNode,
-  startEventNode: StartEventNode,
-  endEventNode: EndEventNode,
   timerEventNode: TimerEventNode,
   messageEventNode: MessageEventNode,
   parallelGatewayNode: ParallelGatewayNode,
@@ -42,8 +38,6 @@ const NODE_TYPES = {
 const EDGE_TYPES = { customEdge: CustomEdge };
 
 const EVENT_NODE_COLORS = {
-  startEventNode: "#22c55e",
-  endEventNode: "#ef4444",
   timerEventNode: "#06b6d4",
   messageEventNode: "#8b5cf6",
 };
@@ -77,8 +71,6 @@ function CanvasInner() {
   const clearSelection = useWorkflowStore((s) => s.clearSelection);
   const addAgentNode = useWorkflowStore((s) => s.addAgentNode);
   const addDecisionNode = useWorkflowStore((s) => s.addDecisionNode);
-  const addStartEventNode = useWorkflowStore((s) => s.addStartEventNode);
-  const addEndEventNode = useWorkflowStore((s) => s.addEndEventNode);
   const addTimerEventNode = useWorkflowStore((s) => s.addTimerEventNode);
   const addMessageEventNode = useWorkflowStore((s) => s.addMessageEventNode);
   const addParallelGatewayNode = useWorkflowStore((s) => s.addParallelGatewayNode);
@@ -91,8 +83,6 @@ function CanvasInner() {
 
   const SHAPE_ADDERS = {
     decision: addDecisionNode,
-    startEvent: addStartEventNode,
-    endEvent: addEndEventNode,
     timerEvent: addTimerEventNode,
     messageEvent: addMessageEventNode,
     parallelGateway: addParallelGatewayNode,
@@ -127,7 +117,7 @@ function CanvasInner() {
       addAgentNode(agentMeta, position);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [screenToFlowPosition, addAgentNode, addDecisionNode, addStartEventNode, addEndEventNode,
+    [screenToFlowPosition, addAgentNode, addDecisionNode,
      addTimerEventNode, addMessageEventNode, addParallelGatewayNode,
      addUserTaskNode, addServiceTaskNode, addScriptTaskNode, addSendTaskNode, addAnnotationNode, addMcpTaskNode]
   );
@@ -180,8 +170,8 @@ function CanvasInner() {
         {nodes.length === 0 && (
           <div className="canvas-empty-state">
             <div className="canvas-empty-state__icon">⬡</div>
-            <h3>Drag agents or BPMN elements here to build your workflow</h3>
-            <p>Pull agents from the left panel, or drag BPMN shapes (Start, End, Tasks, Gateways) onto the canvas</p>
+            <h3>Drag agents to build your workflow</h3>
+            <p>Pull agents from the left panel onto the canvas to get started</p>
           </div>
         )}
       </ReactFlow>
