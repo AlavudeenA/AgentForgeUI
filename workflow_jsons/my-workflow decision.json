@@ -1,5 +1,5 @@
 {
-  "name": "my-workflow",
+  "name": "my-workflow decision",
   "nodes": [
     {
       "data": {
@@ -86,7 +86,6 @@
         },
         "requires_approval": false
       },
-      "dragging": false,
       "id": "node-2-1778521555831",
       "measured": {
         "height": 81,
@@ -97,7 +96,8 @@
         "y": 256
       },
       "selected": false,
-      "type": "agentNode"
+      "type": "agentNode",
+      "dragging": false
     },
     {
       "data": {
@@ -126,7 +126,7 @@
           "operand_b"
         ],
         "inputs": {
-          "operand_a": "{state['subtraction_agent_output']['result']}",
+          "operand_a": "5",
           "operand_b": "5"
         },
         "label": "Multiplication Agent",
@@ -144,12 +144,38 @@
         "x": 224,
         "y": 96
       },
-      "selected": true,
+      "selected": false,
       "type": "agentNode"
     },
     {
       "data": {
+        "condition": "state['addition_agent_output']['result'] > 10",
+        "description": "Conditional branch",
+        "label": "Decision"
+      },
+      "dragging": false,
+      "id": "node-1-1778525510488",
+      "measured": {
+        "height": 116,
+        "width": 116
+      },
+      "position": {
+        "x": -64,
+        "y": 112
+      },
+      "selected": true,
+      "type": "decisionNode"
+    },
+    {
+      "id": "node-2-1778525682292",
+      "type": "agentNode",
+      "position": {
+        "x": 272,
+        "y": 256
+      },
+      "data": {
         "agentName": "division_agent",
+        "label": "Division Agent",
         "description": "Divides the first number by the second after a 5-second delay",
         "inputFormat": {
           "operand_a": {
@@ -173,46 +199,20 @@
           "operand_a",
           "operand_b"
         ],
+        "outputFormat": {
+          "result": "<class 'float'>"
+        },
         "inputs": {
           "operand_a": "{state['multiplication_agent_output']['result']}",
           "operand_b": "10"
         },
-        "label": "Division Agent",
-        "outputFormat": {
-          "result": "<class 'float'>"
-        },
         "requires_approval": false
       },
-      "id": "node-2-1778525682292",
       "measured": {
-        "height": 81,
-        "width": 140
+        "width": 140,
+        "height": 81
       },
-      "position": {
-        "x": 272,
-        "y": 256
-      },
-      "selected": false,
-      "type": "agentNode"
-    },
-    {
-      "id": "node-3-1778525747598",
-      "type": "timerEventNode",
-      "position": {
-        "x": 0,
-        "y": 96
-      },
-      "data": {
-        "label": "Timer",
-        "timerType": "duration",
-        "timerValue": "5"
-      },
-      "measured": {
-        "width": 72,
-        "height": 98
-      },
-      "selected": false,
-      "dragging": false
+      "selected": false
     }
   ],
   "edges": [
@@ -235,10 +235,36 @@
         "condition": "",
         "label": ""
       },
-      "id": "edge-1778525684885",
-      "source": "node-3-1778521574508",
+      "id": "edge-1778525513989",
+      "source": "node-1-1778521544888",
       "sourceHandle": null,
-      "target": "node-2-1778525682292",
+      "target": "node-1-1778525510488",
+      "targetHandle": "in",
+      "type": "customEdge"
+    },
+    {
+      "animated": false,
+      "data": {
+        "condition": "",
+        "label": ""
+      },
+      "id": "edge-1778525516047",
+      "source": "node-1-1778525510488",
+      "sourceHandle": "yes",
+      "target": "node-2-1778521555831",
+      "targetHandle": null,
+      "type": "customEdge"
+    },
+    {
+      "animated": false,
+      "data": {
+        "condition": "",
+        "label": ""
+      },
+      "id": "edge-1778525517371",
+      "source": "node-1-1778525510488",
+      "sourceHandle": "no",
+      "target": "node-3-1778521574508",
       "targetHandle": null,
       "type": "customEdge"
     },
@@ -249,24 +275,11 @@
         "label": "",
         "condition": ""
       },
-      "source": "node-1-1778521544888",
+      "source": "node-3-1778521574508",
       "sourceHandle": null,
-      "target": "node-3-1778525747598",
+      "target": "node-2-1778525682292",
       "targetHandle": null,
-      "id": "edge-1778525750742"
-    },
-    {
-      "type": "customEdge",
-      "animated": false,
-      "data": {
-        "label": "",
-        "condition": ""
-      },
-      "source": "node-3-1778525747598",
-      "sourceHandle": null,
-      "target": "node-2-1778521555831",
-      "targetHandle": null,
-      "id": "edge-1778525753507"
+      "id": "edge-1778525684885"
     }
   ]
 }

@@ -9,7 +9,7 @@ export default function Toolbar({ onShowLogs }) {
   const edges = useWorkflowStore((s) => s.edges);
   const clearCanvas = useWorkflowStore((s) => s.clearCanvas);
   const loadWorkflowToCanvas = useWorkflowStore((s) => s.loadWorkflowToCanvas);
-  const buildAgentsPayload = useWorkflowStore((s) => s.buildAgentsPayload);
+  const buildWorkflowPayload = useWorkflowStore((s) => s.buildWorkflowPayload);
   const setActiveRun = useWorkflowStore((s) => s.setActiveRun);
   const updateRunStatus = useWorkflowStore((s) => s.updateRunStatus);
 
@@ -46,11 +46,11 @@ export default function Toolbar({ onShowLogs }) {
   };
 
   const handleRun = async () => {
-    const agents = buildAgentsPayload();
+    const { agents, edges: payloadEdges } = buildWorkflowPayload();
     if (!agents.length) return alert("Add at least one agent to run.");
     setRunning(true);
     try {
-      const { run_id } = await api.runWorkflow(agents);
+      const { run_id } = await api.runWorkflow(agents, payloadEdges);
       setActiveRun(run_id);
 
       const poll = setInterval(async () => {

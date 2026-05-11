@@ -26,8 +26,8 @@ export const api = {
   generateViaLLM: (prompt) =>
     fetchJSON("/generate_workflow_via_copilot", { method: "POST", body: JSON.stringify({ prompt }) }),
 
-  runWorkflow: (agents) =>
-    fetchJSON("/run_workflow_langgraph", { method: "POST", body: JSON.stringify({ agents }) }),
+  runWorkflow: (agents, edges = []) =>
+    fetchJSON("/run_workflow_langgraph", { method: "POST", body: JSON.stringify({ agents, edges }) }),
   getRunStatus: (runId) => fetchJSON(`/workflow/status/${runId}`),
   approveNode: (runId, nodeId) =>
     fetchJSON("/workflow/approve_lg", { method: "POST", body: JSON.stringify({ run_id: runId, node_id: nodeId }) }),

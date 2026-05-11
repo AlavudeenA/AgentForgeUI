@@ -191,10 +191,12 @@ export const useWorkflowStore = create((set, get) => ({
     });
   },
 
-  // ── Derive the agents array for backend execution ─────────────────────────
-  buildAgentsPayload: () => {
+  // ── Derive the full workflow payload for backend execution ────────────────
+  buildWorkflowPayload: () => {
     const { nodes, edges } = get();
-    // Topological sort using edges
+    const EXEC_TYPES = new Set(["agentNode", "timerEventNode", "decisionNode"]);
+
+    // Topological sort
     const adj = {};
     const inDegree = {};
     nodes.forEach((n) => { adj[n.id] = []; inDegree[n.id] = 0; });
@@ -202,7 +204,6 @@ export const useWorkflowStore = create((set, get) => ({
       if (adj[e.source]) adj[e.source].push(e.target);
       if (e.target in inDegree) inDegree[e.target] = (inDegree[e.target] || 0) + 1;
     });
-
     const queue = nodes.filter((n) => inDegree[n.id] === 0).map((n) => n.id);
     const sorted = [];
     while (queue.length) {
@@ -213,31 +214,36 @@ export const useWorkflowStore = create((set, get) => ({
         if (inDegree[next] === 0) queue.push(next);
       });
     }
-    // Fallback if no edges
     const order = sorted.length === nodes.length ? sorted : nodes.map((n) => n.id);
     const nodeMap = Object.fromEntries(nodes.map((n) => [n.id, n]));
 
-    return order
-      .map((id) => nodeMap[id])
-      .filter((n) => n && (n.type === "agentNode" || n.type === "timerEventNode"))
-      .map((n) => {
-        if (n.type === "timerEventNode") {
-          return {
-            node_type: "timer",
-            agent_name: "__timer__",
-            node_id: n.id,
-            timer_value: n.data.timerValue || "PT5S",
-            inputs: {},
-            requires_approval: false,
-          };
-        }
-        return {
-          agent_name: n.data.agentName,
-          node_id: n.id,
-          inputs: n.data.inputs || {},
-          requires_approval: n.data.requires_approval || false,
-        };
-      });
+    const execNodes = order.map((id) => nodeMap[id]).filter((n) => n && EXEC_TYPES.has(n.type));
+    const execNodeIds = new Set(execNodes.map((n) => n.id));
+
+    const agents = execNodes.map((n) => {
+      if (n.type === "timerEventNode") {
+        return { node_type: "timer", agent_name: "__timer__", node_id: n.id,
+                 timer_value: n.data.timerValue || "5", inputs: {}, requires_approval: false };
+      }
+      if (n.type === "decisionNode") {
+        return { node_type: "decision", agent_name: "__decision__", node_id: n.id,
+                 condition: n.data.condition || "False", inputs: {}, requires_approval: false };
+      }
+      return { agent_name: n.data.agentName, node_id: n.id,
+               inputs: n.data.inputs || {}, requires_approval: n.data.requires_approval || false };
+    });
+
+    const payloadEdges = edges
+      .filter((e) => execNodeIds.has(e.source) && execNodeIds.has(e.target))
+      .map((e) => ({ source: e.source, target: e.target, sourceHandle: e.sourceHandle || null }));
+
+    return { agents, edges: payloadEdges };
+  },
+
+  // ── Legacy alias (kept for RunTab compatibility) ───────────────────────────
+  buildAgentsPayload: () => {
+    const payload = get().buildWorkflowPayload();
+    return payload.agents;
   },
 
   // ── Active run ────────────────────────────────────────────────────────────

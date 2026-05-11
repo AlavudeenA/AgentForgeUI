@@ -205,7 +205,6 @@ function GatewayPanel({ node }) {
   const deleteNode = useWorkflowStore((s) => s.deleteNode);
   const clearSelection = useWorkflowStore((s) => s.clearSelection);
   const { data, id, type } = node;
-
   const isDecision = type === "decisionNode";
   const title = isDecision ? "XOR Gateway" : "Parallel Gateway";
 
@@ -223,18 +222,18 @@ function GatewayPanel({ node }) {
           <input className="prop-input" value={data.label || ""} onChange={(e) => updateNodeData(id, { label: e.target.value })} />
         </PropField>
         {isDecision && (
-          <PropField label="Condition Expression" hint="Python expression evaluated against state dict">
+          <PropField label="Condition" hint="True → Bottom (Yes path)  |  False → Right (No path)">
             <input
               className="prop-input"
               value={data.condition || ""}
-              placeholder="e.g. state['agent_output']['status'] == 'Done'"
+              placeholder="e.g. state['addition_agent_output']['result'] > 100"
               onChange={(e) => updateNodeData(id, { condition: e.target.value })}
             />
           </PropField>
         )}
         {!isDecision && (
           <p className="prop-hint" style={{ padding: "0.5rem 0" }}>
-            All outgoing paths execute simultaneously. Connect multiple targets from the bottom handles.
+            All outgoing paths execute simultaneously. Connect targets from left, bottom, and right handles.
           </p>
         )}
       </div>

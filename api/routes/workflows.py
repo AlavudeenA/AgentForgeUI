@@ -193,16 +193,17 @@ def _normalize_agent_config(raw: dict) -> dict:
 
 
 def _assign_node_ids(agents_list: list[dict]) -> list[dict]:
-    """Give every agent occurrence a unique node_id. Timer nodes keep their canvas node_id."""
+    """Preserve canvas node_ids if already set; auto-assign for spec-format entries without one."""
+    needs_assign = [a for a in agents_list
+                    if not a.get("node_id") and a.get("node_type") not in ("timer", "decision")]
     counts: dict[str, int] = {}
-    for a in agents_list:
-        if a.get("node_type") != "timer":
-            counts[a["agent_name"]] = counts.get(a["agent_name"], 0) + 1
+    for a in needs_assign:
+        counts[a["agent_name"]] = counts.get(a["agent_name"], 0) + 1
 
     occurrences: dict[str, int] = {}
     result = []
     for a in agents_list:
-        if a.get("node_type") == "timer":
+        if a.get("node_id") or a.get("node_type") in ("timer", "decision"):
             result.append(a)
             continue
         name = a["agent_name"]
@@ -307,6 +308,74 @@ def _append_feedback_to_inputs(state: dict, agent_name: str, node_id: str, feedb
 
     state[node_input_key] = node_inputs
     return state
+
+
+def _make_decision_node(condition: str, node_id: str, run_id: str):
+    def node_fn(state: dict) -> dict:
+        run = LANGGRAPH_RUNS.get(run_id, {})
+        if state.get("agent_status", {}).get(node_id) == "completed":
+            return state
+
+        state.setdefault("agent_status", {})[node_id] = "in-progress"
+        logger.info(f"AGENT_STATUS|run_id={run_id}|agent={node_id}|status=in-progress|condition={condition[:60]}")
+        if run:
+            run["state"] = state
+
+        try:
+            result = eval(condition, {"__builtins__": {}}, {"state": state})  # noqa: S307
+            decision = "yes" if result else "no"
+        except Exception as exc:
+            logger.warning(f"Decision {node_id}: condition eval failed ({exc}) — routing 'no'")
+            decision = "no"
+
+        state[f"{node_id}_decision"] = decision
+        state["agent_status"][node_id] = "completed"
+        logger.info(f"AGENT_STATUS|run_id={run_id}|agent={node_id}|status=completed|decision={decision}")
+        if run:
+            run["state"] = state
+        return state
+
+    return node_fn
+
+
+def _build_graph_from_edges(builder, nodes_with_ids, edges_raw, node_ids):
+    """Wire LangGraph nodes using the canvas edge topology."""
+    node_type_map = {n["node_id"]: n.get("node_type") for n in nodes_with_ids}
+    node_id_set = set(node_ids)
+
+    edge_map: dict = {}
+    has_incoming: set = set()
+    for edge in edges_raw:
+        src, tgt = edge["source"], edge["target"]
+        handle = edge.get("sourceHandle")
+        if src in node_id_set and tgt in node_id_set:
+            edge_map.setdefault(src, []).append((tgt, handle))
+            has_incoming.add(tgt)
+
+    entry = next((nid for nid in node_ids if nid not in has_incoming), node_ids[0])
+    builder.set_entry_point(entry)
+
+    for nid in node_ids:
+        outgoing = edge_map.get(nid, [])
+
+        if node_type_map.get(nid) == "decision":
+            yes_target = next((t for t, h in outgoing if h == "yes"), None)
+            no_target  = next((t for t, h in outgoing if h == "no"),  None)
+            path_map = {
+                "yes": yes_target if yes_target else END,
+                "no":  no_target  if no_target  else END,
+            }
+
+            def _router(state, _nid=nid):
+                return state.get(f"{_nid}_decision", "no")
+
+            builder.add_conditional_edges(nid, _router, path_map)
+        else:
+            if not outgoing:
+                builder.add_edge(nid, END)
+            else:
+                for tgt, _ in outgoing:
+                    builder.add_edge(nid, tgt)
 
 
 def _make_node(agent_instance: Agent, agent_name: str, node_id: str, run_id: str, requires_approval: bool):
@@ -425,8 +494,9 @@ def run_workflow_langgraph():
     }
 
     for agent_cfg in agents_with_ids:
-        if agent_cfg.get("node_type") != "timer":
-            initial_state = parse_dynamic_agent_input_format(agent_cfg, initial_state)
+        if agent_cfg.get("node_type") in ("timer", "decision"):
+            continue
+        initial_state = parse_dynamic_agent_input_format(agent_cfg, initial_state)
 
     LANGGRAPH_RUNS[run_id] = {
         "state": initial_state,
@@ -440,6 +510,7 @@ def run_workflow_langgraph():
 
     builder = StateGraph(dict)
     node_ids: list[str] = []
+    edges_raw: list[dict] = data.get("edges", [])
 
     for agent_cfg in agents_with_ids:
         agent_name = agent_cfg["agent_name"]
@@ -447,8 +518,9 @@ def run_workflow_langgraph():
         requires_approval = agent_cfg.get("requires_approval", False)
 
         if agent_cfg.get("node_type") == "timer":
-            timer_value = agent_cfg.get("timer_value", "PT5S")
-            node_fn = _make_timer_node(timer_value, node_id, run_id)
+            node_fn = _make_timer_node(agent_cfg.get("timer_value", "5"), node_id, run_id)
+        elif agent_cfg.get("node_type") == "decision":
+            node_fn = _make_decision_node(agent_cfg.get("condition", "False"), node_id, run_id)
         else:
             try:
                 agent_instance = _load_agent_instance(agent_name)
@@ -460,10 +532,14 @@ def run_workflow_langgraph():
         builder.add_node(node_id, node_fn)
         node_ids.append(node_id)
 
-    builder.set_entry_point(node_ids[0])
-    for i in range(len(node_ids) - 1):
-        builder.add_edge(node_ids[i], node_ids[i + 1])
-    builder.add_edge(node_ids[-1], END)
+    if edges_raw:
+        _build_graph_from_edges(builder, agents_with_ids, edges_raw, node_ids)
+    else:
+        # Fallback: linear chain (backward compat with spec format)
+        builder.set_entry_point(node_ids[0])
+        for i in range(len(node_ids) - 1):
+            builder.add_edge(node_ids[i], node_ids[i + 1])
+        builder.add_edge(node_ids[-1], END)
 
     compiled = builder.compile()
     LANGGRAPH_RUNS[run_id]["graph"] = compiled
@@ -498,8 +574,14 @@ def workflow_status(run_id: str):
                 {
                     "node_id": a["node_id"],
                     "agent_name": a["agent_name"],
-                    # Prefer node_id key; fall back to base agent name key (single-occurrence case)
-                    "output": state.get(f"{a['node_id']}_output") or state.get(f"{a['agent_name']}_output"),
+                    "node_type": a.get("node_type"),
+                    "output": (
+                        state.get(f"{a['node_id']}_output")
+                        or state.get(f"{a['agent_name']}_output")
+                        or ({"decision": state.get(f"{a['node_id']}_decision")}
+                            if a.get("node_type") == "decision" and state.get(f"{a['node_id']}_decision")
+                            else None)
+                    ),
                     "error": state.get(f"{a['node_id']}_error"),
                 }
                 for a in run.get("agents", [])

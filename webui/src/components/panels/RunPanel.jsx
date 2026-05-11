@@ -98,11 +98,18 @@ export default function RunStatusOverlay() {
 
   if (!activeRunId) return null;
 
-  const agentNodes = nodes.filter((n) => n.type === "agentNode");
+  const EXEC_TYPES = new Set(["agentNode", "timerEventNode", "decisionNode"]);
+  const execNodes = nodes.filter((n) => EXEC_TYPES.has(n.type));
 
-  const displayNode = agentNodes.find((n) => n.data?.agentName === "display_output_agent");
-  const displayOutput = displayNode ? runOutputs[displayNode.data.agentName] : null;
+  const displayNode = execNodes.find((n) => n.data?.agentName === "display_output_agent");
+  const displayOutput = displayNode ? runOutputs[displayNode.id] : null;
   const showFinalResult = runCompleted && displayOutput?.result !== undefined;
+
+  const nodeLabel = (n) => {
+    if (n.type === "timerEventNode") return `⏱ ${n.data?.label || "Timer"} (${n.data?.timerValue || ""}s)`;
+    if (n.type === "decisionNode") return `◆ ${n.data?.label || "Decision"}`;
+    return n.data?.agentName || n.id;
+  };
 
   return (
     <div className="run-overlay">
@@ -137,15 +144,14 @@ export default function RunStatusOverlay() {
       )}
 
       <div className="run-overlay__rows">
-        {agentNodes.map((n) => {
-          const agentName = n.data?.agentName;
-          const status = runStatus[agentName] || "not-started";
-          const output = runOutputs[agentName];
+        {execNodes.map((n) => {
+          const status = runStatus[n.id] || "not-started";
+          const output = runOutputs[n.id];
           return (
             <AgentStatusRow
               key={n.id}
-              nodeId={agentName}
-              agentName={agentName || n.id}
+              nodeId={n.id}
+              agentName={nodeLabel(n)}
               status={status}
               output={output}
               error={null}
