@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { applyEdgeChanges, applyNodeChanges } from "@xyflow/react";
+import { REGISTRY_BY_TYPE, EXECUTABLE_TYPES } from "../config/nodeRegistryData.js";
 
 let nodeCounter = 0;
 const newId = () => `node-${++nodeCounter}-${Date.now()}`;
@@ -65,82 +66,16 @@ export const useWorkflowStore = create((set, get) => ({
     return id;
   },
 
-  addDecisionNode: (position) => {
+  // Generic add — driven by nodeRegistry. shapeKey matches entry.shapeKey.
+  addNode: (shapeKey, position) => {
+    const entry = Object.values(REGISTRY_BY_TYPE).find((e) => e.shapeKey === shapeKey);
+    if (!entry) return;
     const id = newId();
     set((s) => ({
-      nodes: [
-        ...s.nodes,
-        {
-          id,
-          type: "decisionNode",
-          position,
-          data: { label: "Decision", condition: "", description: "Conditional branch" },
-        },
-      ],
+      nodes: [...s.nodes, { id, type: entry.type, position, data: { ...entry.defaultData } }],
       selectedNodeId: id,
       selectedEdgeId: null,
     }));
-    return id;
-  },
-
-  addStartEventNode: (position) => {
-    const id = newId();
-    set((s) => ({ nodes: [...s.nodes, { id, type: "startEventNode", position, data: { label: "Start" } }], selectedNodeId: id, selectedEdgeId: null }));
-    return id;
-  },
-
-  addEndEventNode: (position) => {
-    const id = newId();
-    set((s) => ({ nodes: [...s.nodes, { id, type: "endEventNode", position, data: { label: "End" } }], selectedNodeId: id, selectedEdgeId: null }));
-    return id;
-  },
-
-  addTimerEventNode: (position) => {
-    const id = newId();
-    set((s) => ({ nodes: [...s.nodes, { id, type: "timerEventNode", position, data: { label: "Timer", timerType: "duration", timerValue: "5" } }], selectedNodeId: id, selectedEdgeId: null }));
-    return id;
-  },
-
-  addMessageEventNode: (position) => {
-    const id = newId();
-    set((s) => ({ nodes: [...s.nodes, { id, type: "messageEventNode", position, data: { label: "Message", messageName: "" } }], selectedNodeId: id, selectedEdgeId: null }));
-    return id;
-  },
-
-
-  addUserTaskNode: (position) => {
-    const id = newId();
-    set((s) => ({ nodes: [...s.nodes, { id, type: "userTaskNode", position, data: { label: "User Task", assignee: "", instructions: "", requires_approval: true } }], selectedNodeId: id, selectedEdgeId: null }));
-    return id;
-  },
-
-  addServiceTaskNode: (position) => {
-    const id = newId();
-    set((s) => ({ nodes: [...s.nodes, { id, type: "serviceTaskNode", position, data: { label: "Service Task", method: "GET", url: "", headers: "", body: "" } }], selectedNodeId: id, selectedEdgeId: null }));
-    return id;
-  },
-
-  addScriptTaskNode: (position) => {
-    const id = newId();
-    set((s) => ({ nodes: [...s.nodes, { id, type: "scriptTaskNode", position, data: { label: "Script Task", language: "python", script: "" } }], selectedNodeId: id, selectedEdgeId: null }));
-    return id;
-  },
-
-  addSendTaskNode: (position) => {
-    const id = newId();
-    set((s) => ({ nodes: [...s.nodes, { id, type: "sendTaskNode", position, data: { label: "Send Task", to: "", subject: "", body: "" } }], selectedNodeId: id, selectedEdgeId: null }));
-    return id;
-  },
-
-  addMcpTaskNode: (position) => {
-    const id = newId();
-    set((s) => ({ nodes: [...s.nodes, { id, type: "mcpTaskNode", position, data: { label: "MCP Client", serverName: "", toolName: "", arguments: "", outputKey: "mcp_result" } }], selectedNodeId: id, selectedEdgeId: null }));
-    return id;
-  },
-
-  addAnnotationNode: (position) => {
-    const id = newId();
-    set((s) => ({ nodes: [...s.nodes, { id, type: "annotationNode", position, data: { text: "Add a note…" } }], selectedNodeId: id, selectedEdgeId: null }));
     return id;
   },
 
@@ -189,7 +124,6 @@ updateNodeData: (id, patch) =>
   // ── Derive the full workflow payload for backend execution ────────────────
   buildWorkflowPayload: () => {
     const { nodes, edges } = get();
-    const EXEC_TYPES = new Set(["agentNode", "timerEventNode", "decisionNode", "mcpTaskNode"]);
 
     // Topological sort
     const adj = {};
@@ -212,27 +146,18 @@ updateNodeData: (id, patch) =>
     const order = sorted.length === nodes.length ? sorted : nodes.map((n) => n.id);
     const nodeMap = Object.fromEntries(nodes.map((n) => [n.id, n]));
 
-    const execNodes = order.map((id) => nodeMap[id]).filter((n) => n && EXEC_TYPES.has(n.type));
+    const execNodes = order.map((id) => nodeMap[id]).filter((n) => n && EXECUTABLE_TYPES.has(n.type));
     const execNodeIds = new Set(execNodes.map((n) => n.id));
 
     const agents = execNodes.map((n) => {
-      if (n.type === "timerEventNode") {
-        return { node_type: "timer", agent_name: "__timer__", node_id: n.id,
-                 timer_value: n.data.timerValue || "5", inputs: {}, requires_approval: false };
+      if (n.type === "agentNode") {
+        return { agent_name: n.data.agentName, node_id: n.id,
+                 inputs: n.data.inputs || {}, requires_approval: n.data.requires_approval || false };
       }
-      if (n.type === "decisionNode") {
-        return { node_type: "decision", agent_name: "__decision__", node_id: n.id,
-                 condition: n.data.condition || "False", inputs: {}, requires_approval: false };
-      }
-      if (n.type === "mcpTaskNode") {
-        return { node_type: "mcp", agent_name: "__mcp__", node_id: n.id,
-                 server_name: n.data.serverName || "", tool_name: n.data.toolName || "",
-                 arguments: n.data.arguments || "", output_key: n.data.outputKey || "mcp_result",
-                 inputs: {}, requires_approval: false };
-      }
-      return { agent_name: n.data.agentName, node_id: n.id,
-               inputs: n.data.inputs || {}, requires_approval: n.data.requires_approval || false };
-    });
+      // All other executable types: delegate to registry toPayload
+      const reg = REGISTRY_BY_TYPE[n.type];
+      return reg?.toPayload(n.data, n.id) ?? null;
+    }).filter(Boolean);
 
     const payloadEdges = edges
       .filter((e) => execNodeIds.has(e.source) && execNodeIds.has(e.target))

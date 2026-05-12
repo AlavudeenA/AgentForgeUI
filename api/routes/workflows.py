@@ -397,7 +397,44 @@ def _normalize_agent_config(raw: dict) -> dict:
     }
 
 
-_SPECIAL_NODE_TYPES = ("timer", "decision", "mcp")
+# ─── Node handler registry ────────────────────────────────────────────────────
+# Maps node_type string → factory(cfg, node_id, run_id) → node_fn.
+# To add a new executable node type: add one entry here + a React registry entry.
+_NODE_HANDLER_REGISTRY: dict = {}
+
+
+def _node_handler(node_type: str):
+    """Decorator that registers a node handler factory."""
+    def decorator(fn):
+        _NODE_HANDLER_REGISTRY[node_type] = fn
+        return fn
+    return decorator
+
+
+# Derived from registry so _assign_node_ids and input parsing skip them
+def _special_node_types():
+    return tuple(_NODE_HANDLER_REGISTRY.keys())
+
+
+@_node_handler("timer")
+def _timer_factory(cfg: dict, node_id: str, run_id: str):
+    return _make_timer_node(cfg.get("timer_value", "5"), node_id, run_id)
+
+
+@_node_handler("decision")
+def _decision_factory(cfg: dict, node_id: str, run_id: str):
+    return _make_decision_node(cfg.get("condition", "False"), node_id, run_id)
+
+
+@_node_handler("mcp")
+def _mcp_factory(cfg: dict, node_id: str, run_id: str):
+    return _make_mcp_node(
+        cfg.get("server_name", ""),
+        cfg.get("tool_name", ""),
+        cfg.get("arguments", ""),
+        cfg.get("output_key", "mcp_result"),
+        node_id, run_id,
+    )
 
 
 def _merge_state(left: dict, right: dict) -> dict:
@@ -415,7 +452,7 @@ def _merge_state(left: dict, right: dict) -> dict:
 def _assign_node_ids(agents_list: list[dict]) -> list[dict]:
     """Preserve canvas node_ids if already set; auto-assign for spec-format entries without one."""
     needs_assign = [a for a in agents_list
-                    if not a.get("node_id") and a.get("node_type") not in _SPECIAL_NODE_TYPES]
+                    if not a.get("node_id") and a.get("node_type") not in _special_node_types()]
     counts: dict[str, int] = {}
     for a in needs_assign:
         counts[a["agent_name"]] = counts.get(a["agent_name"], 0) + 1
@@ -423,7 +460,7 @@ def _assign_node_ids(agents_list: list[dict]) -> list[dict]:
     occurrences: dict[str, int] = {}
     result = []
     for a in agents_list:
-        if a.get("node_id") or a.get("node_type") in _SPECIAL_NODE_TYPES:
+        if a.get("node_id") or a.get("node_type") in _special_node_types():
             result.append(a)
             continue
         name = a["agent_name"]
@@ -714,7 +751,7 @@ def run_workflow_langgraph():
     }
 
     for agent_cfg in agents_with_ids:
-        if agent_cfg.get("node_type") in _SPECIAL_NODE_TYPES:
+        if agent_cfg.get("node_type") in _special_node_types():
             continue
         initial_state = parse_dynamic_agent_input_format(agent_cfg, initial_state)
 
@@ -737,19 +774,12 @@ def run_workflow_langgraph():
         node_id = agent_cfg["node_id"]
         requires_approval = agent_cfg.get("requires_approval", False)
 
-        if agent_cfg.get("node_type") == "timer":
-            node_fn = _make_timer_node(agent_cfg.get("timer_value", "5"), node_id, run_id)
-        elif agent_cfg.get("node_type") == "decision":
-            node_fn = _make_decision_node(agent_cfg.get("condition", "False"), node_id, run_id)
-        elif agent_cfg.get("node_type") == "mcp":
-            node_fn = _make_mcp_node(
-                agent_cfg.get("server_name", ""),
-                agent_cfg.get("tool_name", ""),
-                agent_cfg.get("arguments", ""),
-                agent_cfg.get("output_key", "mcp_result"),
-                node_id, run_id,
-            )
+        node_type = agent_cfg.get("node_type")
+        if node_type and node_type in _NODE_HANDLER_REGISTRY:
+            # Registered special node — dispatch to its factory
+            node_fn = _NODE_HANDLER_REGISTRY[node_type](agent_cfg, node_id, run_id)
         else:
+            # Regular Python agent
             try:
                 agent_instance = _load_agent_instance(agent_name)
             except Exception as exc:

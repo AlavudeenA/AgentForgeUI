@@ -1,20 +1,15 @@
 import { useState } from "react";
 import { api } from "../api/client.js";
 import { useWorkflowStore } from "../store/useWorkflowStore.js";
+import { SIDEBAR_GROUPS } from "../config/nodeRegistry.js";
 
 function AgentCard({ agent }) {
   const onDragStart = (e) => {
     e.dataTransfer.setData("application/json", JSON.stringify(agent));
     e.dataTransfer.effectAllowed = "move";
   };
-
   return (
-    <div
-      className="agent-card"
-      draggable
-      onDragStart={onDragStart}
-      title={agent.description}
-    >
+    <div className="agent-card" draggable onDragStart={onDragStart} title={agent.description}>
       <div className="agent-card__info">
         <div className="agent-card__name">{agent.name.replace(/_/g, " ")}</div>
         <div className="agent-card__desc">{agent.description}</div>
@@ -23,38 +18,31 @@ function AgentCard({ agent }) {
   );
 }
 
-function ShapeButton({ shapeKey, icon, label, title }) {
+function ShapeButton({ entry }) {
   const onDragStart = (e) => {
-    e.dataTransfer.setData("application/shape", shapeKey);
+    e.dataTransfer.setData("application/shape", entry.shapeKey);
     e.dataTransfer.effectAllowed = "move";
   };
-
   return (
-    <button
-      className="shape-btn"
-      draggable
-      onDragStart={onDragStart}
-      title={title || `Drag to add ${label}`}
-    >
-      <span className="shape-btn__icon">{icon}</span>
-      <span>{label}</span>
+    <button className="shape-btn" draggable onDragStart={onDragStart} title={entry.title}>
+      <span className="shape-btn__icon">{entry.icon}</span>
+      <span>{entry.label}</span>
     </button>
   );
 }
 
 export default function AgentSidebar() {
-  const agents = useWorkflowStore((s) => s.agents);
+  const agents    = useWorkflowStore((s) => s.agents);
   const setAgents = useWorkflowStore((s) => s.setAgents);
-  const [search, setSearch] = useState("");
-  const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch]           = useState("");
+  const [refreshing, setRefreshing]   = useState(false);
   const [elementsOpen, setElementsOpen] = useState(false);
 
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
       await api.refreshAgentsMetadata();
-      const updated = await api.getAgents();
-      setAgents(updated);
+      setAgents(await api.getAgents());
     } catch (e) {
       console.error("Failed to refresh agents:", e);
     } finally {
@@ -79,14 +67,10 @@ export default function AgentSidebar() {
             disabled={refreshing}
             title="Reload agents from server"
             style={{
-              background: "none",
-              border: "none",
+              background: "none", border: "none",
               cursor: refreshing ? "not-allowed" : "pointer",
-              color: "var(--text-muted)",
-              fontSize: "0.85rem",
-              padding: "2px 4px",
-              borderRadius: "4px",
-              lineHeight: 1,
+              color: "var(--text-muted)", fontSize: "0.85rem",
+              padding: "2px 4px", borderRadius: "4px", lineHeight: 1,
               opacity: refreshing ? 0.5 : 1,
             }}
           >
@@ -108,9 +92,7 @@ export default function AgentSidebar() {
       <div className="agent-sidebar__hint">Drag an agent onto the canvas</div>
 
       <div className="agent-sidebar__list">
-        {filtered.map((a) => (
-          <AgentCard key={a.name} agent={a} />
-        ))}
+        {filtered.map((a) => <AgentCard key={a.name} agent={a} />)}
         {filtered.length === 0 && (
           <div style={{ color: "var(--text-muted)", padding: "1rem", textAlign: "center", fontSize: "0.8rem" }}>
             No agents found
@@ -118,6 +100,7 @@ export default function AgentSidebar() {
         )}
       </div>
 
+      {/* Workflow elements — collapsed by default, derived entirely from nodeRegistry */}
       <button
         className="agent-sidebar__elements-toggle"
         onClick={() => setElementsOpen((o) => !o)}
@@ -128,27 +111,16 @@ export default function AgentSidebar() {
 
       {elementsOpen && (
         <div className="agent-sidebar__shapes">
-          <div className="bpmn-group-label">Events</div>
-          <div className="bpmn-shape-grid">
-            <ShapeButton shapeKey="timerEvent" icon="⏱" label="Timer" title="Timer Event — wait / delay" />
-          </div>
-
-          <div className="bpmn-group-label">Gateways</div>
-          <div className="bpmn-shape-grid">
-            <ShapeButton shapeKey="decision" icon="◆" label="XOR" title="Exclusive Gateway — one path (XOR)" />
-          </div>
-
-          <div className="bpmn-group-label">Tasks</div>
-          <div className="bpmn-shape-grid">
-            <ShapeButton shapeKey="serviceTask" icon="⚙"  label="Service" title="Service Task — automated HTTP/API call" />
-            <ShapeButton shapeKey="scriptTask"  icon="📜" label="Script"  title="Script Task — runs a script" />
-            <ShapeButton shapeKey="mcpTask"     icon="🔌" label="MCP"     title="MCP Client — call a tool from mcp.json" />
-          </div>
-
-          <div className="bpmn-group-label">Other</div>
-          <div className="bpmn-shape-grid">
-            <ShapeButton shapeKey="annotation" icon="📝" label="Note" title="Annotation — add a text note to the canvas" />
-          </div>
+          {Object.entries(SIDEBAR_GROUPS).map(([group, entries]) => (
+            <div key={group}>
+              <div className="bpmn-group-label">{group}</div>
+              <div className="bpmn-shape-grid">
+                {entries.map((entry) => (
+                  <ShapeButton key={entry.type} entry={entry} />
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </aside>

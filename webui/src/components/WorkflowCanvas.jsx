@@ -8,77 +8,29 @@ import {
   useReactFlow,
 } from "@xyflow/react";
 import { useWorkflowStore } from "../store/useWorkflowStore.js";
-import AgentNode from "./nodes/AgentNode.jsx";
-import DecisionNode from "./nodes/DecisionNode.jsx";
-import TimerEventNode from "./nodes/TimerEventNode.jsx";
-import MessageEventNode from "./nodes/MessageEventNode.jsx";
-import ServiceTaskNode from "./nodes/ServiceTaskNode.jsx";
-import ScriptTaskNode from "./nodes/ScriptTaskNode.jsx";
-import AnnotationNode from "./nodes/AnnotationNode.jsx";
-import McpTaskNode from "./nodes/McpTaskNode.jsx";
+import { NODE_TYPES_MAP, REGISTRY_BY_TYPE } from "../config/nodeRegistry.js";
 import CustomEdge from "./edges/CustomEdge.jsx";
-
-const NODE_TYPES = {
-  agentNode: AgentNode,
-  decisionNode: DecisionNode,
-  timerEventNode: TimerEventNode,
-  messageEventNode: MessageEventNode,
-  serviceTaskNode: ServiceTaskNode,
-  scriptTaskNode: ScriptTaskNode,
-  annotationNode: AnnotationNode,
-  mcpTaskNode: McpTaskNode,
-};
 
 const EDGE_TYPES = { customEdge: CustomEdge };
 
-const EVENT_NODE_COLORS = {
-  timerEventNode: "#06b6d4",
-  messageEventNode: "#8b5cf6",
-};
-
-const TASK_NODE_COLORS = {
-  serviceTaskNode: "#6366f1",
-  scriptTaskNode: "#8b5cf6",
-  mcpTaskNode: "#059669",
-};
-
 function miniMapColor(n) {
-  if (n.type === "decisionNode") return "#f59e0b";
-  if (EVENT_NODE_COLORS[n.type]) return EVENT_NODE_COLORS[n.type];
-  if (TASK_NODE_COLORS[n.type]) return TASK_NODE_COLORS[n.type];
-  if (n.type === "annotationNode") return "#ca8a04";
-  return "var(--primary)";
+  return REGISTRY_BY_TYPE[n.type]?.minimapColor ?? "var(--primary)";
 }
 
 function CanvasInner() {
   const { screenToFlowPosition } = useReactFlow();
   const containerRef = useRef(null);
 
-  const nodes = useWorkflowStore((s) => s.nodes);
-  const edges = useWorkflowStore((s) => s.edges);
-  const onNodesChange = useWorkflowStore((s) => s.onNodesChange);
-  const onEdgesChange = useWorkflowStore((s) => s.onEdgesChange);
-  const onConnect = useWorkflowStore((s) => s.onConnect);
-  const selectNode = useWorkflowStore((s) => s.selectNode);
-  const selectEdge = useWorkflowStore((s) => s.selectEdge);
+  const nodes          = useWorkflowStore((s) => s.nodes);
+  const edges          = useWorkflowStore((s) => s.edges);
+  const onNodesChange  = useWorkflowStore((s) => s.onNodesChange);
+  const onEdgesChange  = useWorkflowStore((s) => s.onEdgesChange);
+  const onConnect      = useWorkflowStore((s) => s.onConnect);
+  const selectNode     = useWorkflowStore((s) => s.selectNode);
+  const selectEdge     = useWorkflowStore((s) => s.selectEdge);
   const clearSelection = useWorkflowStore((s) => s.clearSelection);
-  const addAgentNode = useWorkflowStore((s) => s.addAgentNode);
-  const addDecisionNode = useWorkflowStore((s) => s.addDecisionNode);
-  const addTimerEventNode = useWorkflowStore((s) => s.addTimerEventNode);
-  const addMessageEventNode = useWorkflowStore((s) => s.addMessageEventNode);
-  const addServiceTaskNode = useWorkflowStore((s) => s.addServiceTaskNode);
-  const addScriptTaskNode = useWorkflowStore((s) => s.addScriptTaskNode);
-  const addAnnotationNode = useWorkflowStore((s) => s.addAnnotationNode);
-  const addMcpTaskNode = useWorkflowStore((s) => s.addMcpTaskNode);
-  const SHAPE_ADDERS = {
-    decision: addDecisionNode,
-    timerEvent: addTimerEventNode,
-    messageEvent: addMessageEventNode,
-    serviceTask: addServiceTaskNode,
-    scriptTask: addScriptTaskNode,
-    annotation: addAnnotationNode,
-    mcpTask: addMcpTaskNode,
-  };
+  const addAgentNode   = useWorkflowStore((s) => s.addAgentNode);
+  const addNode        = useWorkflowStore((s) => s.addNode);
 
   const onDragOver = useCallback((e) => {
     e.preventDefault();
@@ -88,36 +40,22 @@ function CanvasInner() {
   const onDrop = useCallback(
     (e) => {
       e.preventDefault();
+      const position = screenToFlowPosition({ x: e.clientX, y: e.clientY });
 
-      const shapeType = e.dataTransfer.getData("application/shape");
-      if (shapeType && SHAPE_ADDERS[shapeType]) {
-        const position = screenToFlowPosition({ x: e.clientX, y: e.clientY });
-        SHAPE_ADDERS[shapeType](position);
+      const shapeKey = e.dataTransfer.getData("application/shape");
+      if (shapeKey) {
+        addNode(shapeKey, position);
         return;
       }
 
       const raw = e.dataTransfer.getData("application/json");
-      if (!raw) return;
-      const agentMeta = JSON.parse(raw);
-      const position = screenToFlowPosition({ x: e.clientX, y: e.clientY });
-      addAgentNode(agentMeta, position);
+      if (raw) addAgentNode(JSON.parse(raw), position);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [screenToFlowPosition, addAgentNode, addDecisionNode,
-     addTimerEventNode, addMessageEventNode,
-     addServiceTaskNode, addScriptTaskNode, addAnnotationNode, addMcpTaskNode]
+    [screenToFlowPosition, addAgentNode, addNode]
   );
 
-  const onNodeClick = useCallback(
-    (_, node) => selectNode(node.id),
-    [selectNode]
-  );
-
-  const onEdgeClick = useCallback(
-    (_, edge) => selectEdge(edge.id),
-    [selectEdge]
-  );
-
+  const onNodeClick = useCallback((_, node) => selectNode(node.id), [selectNode]);
+  const onEdgeClick = useCallback((_, edge) => selectEdge(edge.id), [selectEdge]);
   const onPaneClick = useCallback(() => clearSelection(), [clearSelection]);
 
   return (
@@ -133,7 +71,7 @@ function CanvasInner() {
         onPaneClick={onPaneClick}
         onDrop={onDrop}
         onDragOver={onDragOver}
-        nodeTypes={NODE_TYPES}
+        nodeTypes={NODE_TYPES_MAP}
         edgeTypes={EDGE_TYPES}
         defaultEdgeOptions={{ type: "customEdge", animated: false, data: { label: "", condition: "" } }}
         fitView
@@ -152,7 +90,6 @@ function CanvasInner() {
           nodeColor={miniMapColor}
           maskColor="rgba(244,241,237,0.7)"
         />
-
         {nodes.length === 0 && (
           <div className="canvas-empty-state">
             <div className="canvas-empty-state__icon">⬡</div>

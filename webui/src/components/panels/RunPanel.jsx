@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../../api/client.js";
 import { useWorkflowStore } from "../../store/useWorkflowStore.js";
+import { EXECUTABLE_TYPES, REGISTRY_BY_TYPE } from "../../config/nodeRegistryData.js";
 
 const STATUS_META = {
   "not-started":     { icon: "○", cls: "status--pending",  label: "Pending" },
@@ -140,17 +141,16 @@ export default function RunStatusOverlay() {
 
   if (!activeRunId) return null;
 
-  const EXEC_TYPES = new Set(["agentNode", "timerEventNode", "decisionNode", "mcpTaskNode"]);
-  const execNodes = nodes.filter((n) => EXEC_TYPES.has(n.type));
+  const execNodes = nodes.filter((n) => EXECUTABLE_TYPES.has(n.type));
 
   const displayNode = execNodes.find((n) => n.data?.agentName === "display_output_agent");
   const displayOutput = displayNode ? runOutputs[displayNode.id] : null;
   const showFinalResult = runCompleted && displayOutput?.result !== undefined;
 
+  // Label derived from registry runLabel fn, fallback to agentName
   const nodeLabel = (n) => {
-    if (n.type === "timerEventNode") return `⏱ ${n.data?.label || "Timer"} (${n.data?.timerValue || ""}s)`;
-    if (n.type === "decisionNode") return `◆ ${n.data?.label || "Decision"}`;
-    if (n.type === "mcpTaskNode") return `🔌 ${n.data?.label || "MCP"} (${n.data?.toolName || ""})`;
+    const reg = REGISTRY_BY_TYPE[n.type];
+    if (reg?.runLabel) return reg.runLabel(n.data || {});
     return n.data?.agentName || n.id;
   };
 

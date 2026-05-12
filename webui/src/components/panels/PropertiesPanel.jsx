@@ -221,21 +221,14 @@ function GatewayPanel({ node }) {
         <PropField label="Display Label">
           <input className="prop-input" value={data.label || ""} onChange={(e) => updateNodeData(id, { label: e.target.value })} />
         </PropField>
-        {isDecision && (
-          <PropField label="Condition" hint="True → Bottom (Yes path)  |  False → Right (No path)">
-            <input
-              className="prop-input"
-              value={data.condition || ""}
-              placeholder="e.g. state['addition_agent_output']['result'] > 100"
-              onChange={(e) => updateNodeData(id, { condition: e.target.value })}
-            />
-          </PropField>
-        )}
-        {!isDecision && (
-          <p className="prop-hint" style={{ padding: "0.5rem 0" }}>
-            All outgoing paths execute simultaneously. Connect targets from left, bottom, and right handles.
-          </p>
-        )}
+        <PropField label="Condition" hint="True → Bottom (Yes path)  |  False → Right (No path)">
+          <input
+            className="prop-input"
+            value={data.condition || ""}
+            placeholder="e.g. state['addition_agent_output']['result'] > 100"
+            onChange={(e) => updateNodeData(id, { condition: e.target.value })}
+          />
+        </PropField>
       </div>
     </div>
   );
