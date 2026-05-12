@@ -34,7 +34,11 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8090/mcp)",
       "Bash(python -c \"import urllib.request; r = urllib.request.urlopen\\('http://localhost:8090/mcp'\\); print\\(r.status\\)\")",
       "Bash(Start-Process python *)",
-      "Bash(Start-Sleep -Seconds 3)"
+      "Bash(Start-Sleep -Seconds 3)",
+      "Bash(git restore *)",
+      "Bash(npm install *)",
+      "Bash(rm -rf src/components/nodes src/components/edges)",
+      "Bash(npm uninstall *)"
     ],
     "additionalDirectories": [
       "C:\\Users\\alavu\\source\\repos\\Agent Forge UI"

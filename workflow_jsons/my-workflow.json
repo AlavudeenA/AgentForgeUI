@@ -1,272 +1,78 @@
 {
   "name": "my-workflow",
-  "nodes": [
-    {
-      "data": {
-        "agentName": "addition_agent",
-        "description": "Adds two numbers together after a 5-second delay",
-        "inputFormat": {
-          "operand_a": {
-            "default": "",
-            "depends_on": null,
-            "description": "First number",
-            "options": [],
-            "required": true,
-            "ui_type": "textbox"
-          },
-          "operand_b": {
-            "default": "",
-            "depends_on": null,
-            "description": "Second number",
-            "options": [],
-            "required": true,
-            "ui_type": "textbox"
-          }
+  "bpmnXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<bpmn2:definitions xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n  <bpmn2:process id=\"Process_1\" isExecutable=\"true\">\n    <bpmn2:serviceTask id=\"Activity_0yg1ffm\" name=\"addition agent\">\n      <bpmn2:outgoing>Flow_1ws1fmi</bpmn2:outgoing>\n    </bpmn2:serviceTask>\n    <bpmn2:serviceTask id=\"Activity_097c53z\" name=\"division agent\">\n      <bpmn2:incoming>Flow_1ws1fmi</bpmn2:incoming>\n    </bpmn2:serviceTask>\n    <bpmn2:sequenceFlow id=\"Flow_1ws1fmi\" sourceRef=\"Activity_0yg1ffm\" targetRef=\"Activity_097c53z\" />\n  </bpmn2:process>\n  <bpmndi:BPMNDiagram id=\"BPMNDiagram_1\">\n    <bpmndi:BPMNPlane id=\"BPMNPlane_1\" bpmnElement=\"Process_1\">\n      <bpmndi:BPMNShape id=\"Activity_0yg1ffm_di\" bpmnElement=\"Activity_0yg1ffm\">\n        <dc:Bounds x=\"50\" y=\"110\" width=\"100\" height=\"80\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Activity_097c53z_di\" bpmnElement=\"Activity_097c53z\">\n        <dc:Bounds x=\"220\" y=\"110\" width=\"100\" height=\"80\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNEdge id=\"Flow_1ws1fmi_di\" bpmnElement=\"Flow_1ws1fmi\">\n        <di:waypoint x=\"150\" y=\"150\" />\n        <di:waypoint x=\"220\" y=\"150\" />\n      </bpmndi:BPMNEdge>\n    </bpmndi:BPMNPlane>\n  </bpmndi:BPMNDiagram>\n</bpmn2:definitions>\n",
+  "elementProps": {
+    "Activity_0yg1ffm": {
+      "agentForgeType": "agent",
+      "agentName": "addition_agent",
+      "label": "addition agent",
+      "description": "Adds two numbers together after a 5-second delay",
+      "inputFormat": {
+        "operand_a": {
+          "default": "",
+          "depends_on": null,
+          "description": "First number",
+          "options": [],
+          "required": true,
+          "ui_type": "textbox"
         },
-        "inputOrder": [
-          "operand_a",
-          "operand_b"
-        ],
-        "inputs": {
-          "operand_a": "2",
-          "operand_b": "5"
-        },
-        "label": "Addition Agent",
-        "outputFormat": {
-          "result": "<class 'float'>"
-        },
-        "requires_approval": true
+        "operand_b": {
+          "default": "",
+          "depends_on": null,
+          "description": "Second number",
+          "options": [],
+          "required": true,
+          "ui_type": "textbox"
+        }
       },
-      "dragging": false,
-      "id": "node-1-1778521544888",
-      "measured": {
-        "height": 94,
-        "width": 140
+      "inputOrder": [
+        "operand_a",
+        "operand_b"
+      ],
+      "outputFormat": {
+        "result": "<class 'float'>"
       },
-      "position": {
-        "x": -32,
-        "y": -32
+      "inputs": {
+        "operand_a": "2",
+        "operand_b": "5"
       },
-      "selected": false,
-      "type": "agentNode"
+      "requires_approval": false
     },
-    {
-      "data": {
-        "agentName": "subtraction_agent",
-        "description": "Subtracts the second number from the first after a 5-second delay",
-        "inputFormat": {
-          "operand_a": {
-            "default": "",
-            "depends_on": null,
-            "description": "First number",
-            "options": [],
-            "required": true,
-            "ui_type": "textbox"
-          },
-          "operand_b": {
-            "default": "",
-            "depends_on": null,
-            "description": "Second number",
-            "options": [],
-            "required": true,
-            "ui_type": "textbox"
-          }
+    "Activity_097c53z": {
+      "agentForgeType": "agent",
+      "agentName": "division_agent",
+      "label": "division agent",
+      "description": "Divides the first number by the second after a 5-second delay",
+      "inputFormat": {
+        "operand_a": {
+          "default": "",
+          "depends_on": null,
+          "description": "Numerator",
+          "options": [],
+          "required": true,
+          "ui_type": "textbox"
         },
-        "inputOrder": [
-          "operand_a",
-          "operand_b"
-        ],
-        "inputs": {
-          "operand_a": "{state['addition_agent_output']['result']}",
-          "operand_b": "5"
-        },
-        "label": "Subtraction Agent",
-        "outputFormat": {
-          "result": "<class 'float'>"
-        },
-        "requires_approval": false
+        "operand_b": {
+          "default": "",
+          "depends_on": null,
+          "description": "Denominator",
+          "options": [],
+          "required": true,
+          "ui_type": "textbox"
+        }
       },
-      "dragging": false,
-      "id": "node-2-1778521555831",
-      "measured": {
-        "height": 81,
-        "width": 140
+      "inputOrder": [
+        "operand_a",
+        "operand_b"
+      ],
+      "outputFormat": {
+        "result": "<class 'float'>"
       },
-      "position": {
-        "x": -32,
-        "y": 256
+      "inputs": {
+        "operand_a": "{state['addition_agent_output']['result']}",
+        "operand_b": "7"
       },
-      "selected": false,
-      "type": "agentNode"
-    },
-    {
-      "data": {
-        "agentName": "multiplication_agent",
-        "description": "Multiplies two numbers together after a 5-second delay",
-        "inputFormat": {
-          "operand_a": {
-            "default": "",
-            "depends_on": null,
-            "description": "First number",
-            "options": [],
-            "required": true,
-            "ui_type": "textbox"
-          },
-          "operand_b": {
-            "default": "",
-            "depends_on": null,
-            "description": "Second number",
-            "options": [],
-            "required": true,
-            "ui_type": "textbox"
-          }
-        },
-        "inputOrder": [
-          "operand_a",
-          "operand_b"
-        ],
-        "inputs": {
-          "operand_a": "{state['subtraction_agent_output']['result']}",
-          "operand_b": "5"
-        },
-        "label": "Multiplication Agent",
-        "outputFormat": {
-          "result": "<class 'float'>"
-        },
-        "requires_approval": false
-      },
-      "id": "node-3-1778521574508",
-      "measured": {
-        "height": 81,
-        "width": 140
-      },
-      "position": {
-        "x": 224,
-        "y": 96
-      },
-      "selected": true,
-      "type": "agentNode"
-    },
-    {
-      "data": {
-        "agentName": "division_agent",
-        "description": "Divides the first number by the second after a 5-second delay",
-        "inputFormat": {
-          "operand_a": {
-            "default": "",
-            "depends_on": null,
-            "description": "Numerator",
-            "options": [],
-            "required": true,
-            "ui_type": "textbox"
-          },
-          "operand_b": {
-            "default": "",
-            "depends_on": null,
-            "description": "Denominator",
-            "options": [],
-            "required": true,
-            "ui_type": "textbox"
-          }
-        },
-        "inputOrder": [
-          "operand_a",
-          "operand_b"
-        ],
-        "inputs": {
-          "operand_a": "{state['multiplication_agent_output']['result']}",
-          "operand_b": "10"
-        },
-        "label": "Division Agent",
-        "outputFormat": {
-          "result": "<class 'float'>"
-        },
-        "requires_approval": false
-      },
-      "id": "node-2-1778525682292",
-      "measured": {
-        "height": 81,
-        "width": 140
-      },
-      "position": {
-        "x": 272,
-        "y": 256
-      },
-      "selected": false,
-      "type": "agentNode"
-    },
-    {
-      "id": "node-3-1778525747598",
-      "type": "timerEventNode",
-      "position": {
-        "x": 0,
-        "y": 96
-      },
-      "data": {
-        "label": "Timer",
-        "timerType": "duration",
-        "timerValue": "5"
-      },
-      "measured": {
-        "width": 72,
-        "height": 98
-      },
-      "selected": false,
-      "dragging": false
+      "requires_approval": false
     }
-  ],
-  "edges": [
-    {
-      "animated": false,
-      "data": {
-        "condition": "",
-        "label": ""
-      },
-      "id": "edge-1778521594708",
-      "source": "node-2-1778521555831",
-      "sourceHandle": null,
-      "target": "node-3-1778521574508",
-      "targetHandle": null,
-      "type": "customEdge"
-    },
-    {
-      "animated": false,
-      "data": {
-        "condition": "",
-        "label": ""
-      },
-      "id": "edge-1778525684885",
-      "source": "node-3-1778521574508",
-      "sourceHandle": null,
-      "target": "node-2-1778525682292",
-      "targetHandle": null,
-      "type": "customEdge"
-    },
-    {
-      "type": "customEdge",
-      "animated": false,
-      "data": {
-        "label": "",
-        "condition": ""
-      },
-      "source": "node-1-1778521544888",
-      "sourceHandle": null,
-      "target": "node-3-1778525747598",
-      "targetHandle": null,
-      "id": "edge-1778525750742"
-    },
-    {
-      "type": "customEdge",
-      "animated": false,
-      "data": {
-        "label": "",
-        "condition": ""
-      },
-      "source": "node-3-1778525747598",
-      "sourceHandle": null,
-      "target": "node-2-1778521555831",
-      "targetHandle": null,
-      "id": "edge-1778525753507"
-    }
-  ]
+  }
 }

@@ -1,191 +1,218 @@
 import { create } from "zustand";
-import { applyEdgeChanges, applyNodeChanges } from "@xyflow/react";
-import { REGISTRY_BY_TYPE, EXECUTABLE_TYPES } from "../config/nodeRegistryData.js";
 
-let nodeCounter = 0;
-const newId = () => `node-${++nodeCounter}-${Date.now()}`;
+export const EMPTY_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn2:definitions
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+  id="Definitions_1"
+  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn2:process id="Process_1" isExecutable="true" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1" />
+  </bpmndi:BPMNDiagram>
+</bpmn2:definitions>`;
+
+const EXEC_BPMN_TYPES = new Set([
+  "bpmn:ServiceTask",
+  "bpmn:ScriptTask",
+  "bpmn:IntermediateCatchEvent",
+  "bpmn:ExclusiveGateway",
+]);
 
 export const useWorkflowStore = create((set, get) => ({
   // ── Agents metadata ──────────────────────────────────────────────────────
   agents: [],
   setAgents: (agents) => set({ agents }),
 
-  // ── Canvas state ─────────────────────────────────────────────────────────
-  nodes: [],
-  edges: [],
-  selectedNodeId: null,
-  selectedEdgeId: null,
+  // ── Workflow name ────────────────────────────────────────────────────────
   workflowName: "my-workflow",
-
   setWorkflowName: (name) => set({ workflowName: name }),
 
-  onNodesChange: (changes) =>
-    set((s) => ({ nodes: applyNodeChanges(changes, s.nodes) })),
+  // ── bpmn-js modeler reference (mutable, not tracked by Zustand) ──────────
+  modeler: null,
+  setModeler: (modeler) => set({ modeler }),
 
-  onEdgesChange: (changes) =>
-    set((s) => ({ edges: applyEdgeChanges(changes, s.edges) })),
-
-  onConnect: (connection) =>
+  // ── Per-element agent config keyed by BPMN element id ────────────────────
+  // { [elementId]: { agentForgeType, agentName, inputs, requires_approval, ... } }
+  elementProps: {},
+  updateElementProps: (id, patch) =>
     set((s) => ({
-      edges: [
-        ...s.edges,
-        {
-          ...connection,
-          id: `edge-${Date.now()}`,
-          type: "customEdge",
-          animated: false,
-          data: { label: "", condition: "" },
-        },
-      ],
+      elementProps: { ...s.elementProps, [id]: { ...(s.elementProps[id] ?? {}), ...patch } },
     })),
+  deleteElementProps: (id) =>
+    set((s) => {
+      const next = { ...s.elementProps };
+      delete next[id];
+      return { elementProps: next };
+    }),
 
-  selectNode: (id) => set({ selectedNodeId: id, selectedEdgeId: null }),
-  selectEdge: (id) => set({ selectedEdgeId: id, selectedNodeId: null }),
-  clearSelection: () => set({ selectedNodeId: null, selectedEdgeId: null }),
+  // ── Temp slot used to associate data with the element just created ────────
+  _pendingCreate: null,
+  setPendingCreate: (data) => set({ _pendingCreate: data }),
 
-  addAgentNode: (agentMeta, position) => {
-    const id = newId();
-    const node = {
-      id,
-      type: "agentNode",
-      position,
-      data: {
-        agentName: agentMeta.name,
-        label: agentMeta.name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-        description: agentMeta.description,
-        inputFormat: agentMeta.input_format,
-        inputOrder: agentMeta.input_order,
-        outputFormat: agentMeta.output_format,
-        inputs: Object.fromEntries(
-          agentMeta.input_order.map((k) => [k, agentMeta.input_format[k]?.default ?? ""])
-        ),
-        requires_approval: false,
-      },
-    };
-    set((s) => ({ nodes: [...s.nodes, node], selectedNodeId: id, selectedEdgeId: null }));
-    return id;
+  // ── Reactive list of executable elements — drives RunPanel + Run button ───
+  executableElements: [], // [{ id, label, bpmnType, agentForgeType }]
+  setExecutableElements: (arr) => set({ executableElements: arr }),
+
+  // Called from BpmnCanvas event handlers (outside React) to keep the list fresh
+  _syncExecutableElements: () => {
+    const { modeler, elementProps } = get();
+    if (!modeler) return;
+    try {
+      const reg = modeler.get("elementRegistry");
+      const arr = reg
+        .getAll()
+        .filter((e) => EXEC_BPMN_TYPES.has(e.type))
+        .map((e) => ({
+          id: e.id,
+          label: e.businessObject?.name || e.id,
+          bpmnType: e.type,
+          agentForgeType: (elementProps[e.id] ?? {}).agentForgeType ?? null,
+        }));
+      set({ executableElements: arr });
+    } catch (_) {}
   },
 
-  // Generic add — driven by nodeRegistry. shapeKey matches entry.shapeKey.
-  addNode: (shapeKey, position) => {
-    const entry = Object.values(REGISTRY_BY_TYPE).find((e) => e.shapeKey === shapeKey);
-    if (!entry) return;
-    const id = newId();
-    set((s) => ({
-      nodes: [...s.nodes, { id, type: entry.type, position, data: { ...entry.defaultData } }],
-      selectedNodeId: id,
-      selectedEdgeId: null,
-    }));
-    return id;
+  // ── Selection ────────────────────────────────────────────────────────────
+  selectedElementId: null,
+  setSelectedElementId: (id) => set({ selectedElementId: id }),
+
+  // ── Canvas actions ────────────────────────────────────────────────────────
+  clearCanvas: () => {
+    const { modeler } = get();
+    if (modeler) modeler.importXML(EMPTY_XML).catch(() => {});
+    set({ elementProps: {}, executableElements: [], selectedElementId: null });
   },
 
-updateNodeData: (id, patch) =>
-    set((s) => ({
-      nodes: s.nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, ...patch } } : n)),
-    })),
-
-  updateNodeInput: (id, fieldName, value) =>
-    set((s) => ({
-      nodes: s.nodes.map((n) =>
-        n.id === id ? { ...n, data: { ...n.data, inputs: { ...n.data.inputs, [fieldName]: value } } } : n
-      ),
-    })),
-
-  updateEdgeData: (id, patch) =>
-    set((s) => ({
-      edges: s.edges.map((e) => (e.id === id ? { ...e, data: { ...e.data, ...patch } } : e)),
-    })),
-
-  deleteNode: (id) =>
-    set((s) => ({
-      nodes: s.nodes.filter((n) => n.id !== id),
-      edges: s.edges.filter((e) => e.source !== id && e.target !== id),
-      selectedNodeId: s.selectedNodeId === id ? null : s.selectedNodeId,
-    })),
-
-  deleteEdge: (id) =>
-    set((s) => ({
-      edges: s.edges.filter((e) => e.id !== id),
-      selectedEdgeId: s.selectedEdgeId === id ? null : s.selectedEdgeId,
-    })),
-
-  clearCanvas: () => set({ nodes: [], edges: [], selectedNodeId: null, selectedEdgeId: null }),
-
-  loadWorkflowToCanvas: (wf) => {
-    set({
-      nodes: wf.nodes || [],
-      edges: wf.edges || [],
-      workflowName: wf.name || "my-workflow",
-      selectedNodeId: null,
-      selectedEdgeId: null,
-    });
+  loadWorkflowToCanvas: async (wf) => {
+    const { modeler } = get();
+    if (!modeler) return;
+    set({ workflowName: wf.name ?? "my-workflow" });
+    if (wf.bpmnXml) {
+      await modeler.importXML(wf.bpmnXml);
+      set({ elementProps: wf.elementProps ?? {}, selectedElementId: null });
+      get()._syncExecutableElements();
+    }
   },
 
-  // ── Derive the full workflow payload for backend execution ────────────────
+  // ── Serialize for save ────────────────────────────────────────────────────
+  getWorkflowData: async () => {
+    const { modeler, workflowName, elementProps } = get();
+    if (!modeler) return null;
+    const { xml } = await modeler.saveXML({ format: true });
+    return { name: workflowName, bpmnXml: xml, elementProps };
+  },
+
+  // ── Build execution payload for backend ──────────────────────────────────
   buildWorkflowPayload: () => {
-    const { nodes, edges } = get();
+    const { modeler, elementProps } = get();
+    if (!modeler) return { agents: [], edges: [] };
+
+    let elements;
+    try {
+      elements = modeler.get("elementRegistry").getAll();
+    } catch (_) {
+      return { agents: [], edges: [] };
+    }
+
+    const execShapes = elements.filter((e) => EXEC_BPMN_TYPES.has(e.type));
+    const flows = elements.filter((e) => e.type === "bpmn:SequenceFlow");
+    const execIds = new Set(execShapes.map((e) => e.id));
 
     // Topological sort
     const adj = {};
-    const inDegree = {};
-    nodes.forEach((n) => { adj[n.id] = []; inDegree[n.id] = 0; });
-    edges.forEach((e) => {
-      if (adj[e.source]) adj[e.source].push(e.target);
-      if (e.target in inDegree) inDegree[e.target] = (inDegree[e.target] || 0) + 1;
+    const inDeg = {};
+    execShapes.forEach((s) => { adj[s.id] = []; inDeg[s.id] = 0; });
+    flows.forEach((f) => {
+      if (execIds.has(f.source?.id) && execIds.has(f.target?.id)) {
+        adj[f.source.id].push(f.target.id);
+        inDeg[f.target.id] = (inDeg[f.target.id] ?? 0) + 1;
+      }
     });
-    const queue = nodes.filter((n) => inDegree[n.id] === 0).map((n) => n.id);
+    const queue = execShapes.filter((s) => inDeg[s.id] === 0).map((s) => s.id);
     const sorted = [];
     while (queue.length) {
       const cur = queue.shift();
       sorted.push(cur);
-      (adj[cur] || []).forEach((next) => {
-        inDegree[next]--;
-        if (inDegree[next] === 0) queue.push(next);
-      });
+      (adj[cur] ?? []).forEach((nxt) => { if (--inDeg[nxt] === 0) queue.push(nxt); });
     }
-    const order = sorted.length === nodes.length ? sorted : nodes.map((n) => n.id);
-    const nodeMap = Object.fromEntries(nodes.map((n) => [n.id, n]));
+    const order = sorted.length === execShapes.length ? sorted : execShapes.map((s) => s.id);
+    const shapeById = Object.fromEntries(execShapes.map((s) => [s.id, s]));
 
-    const execNodes = order.map((id) => nodeMap[id]).filter((n) => n && EXECUTABLE_TYPES.has(n.type));
-    const execNodeIds = new Set(execNodes.map((n) => n.id));
+    const agents = order.map((id) => {
+      const shape = shapeById[id];
+      const props = elementProps[id] ?? {};
+      const { agentForgeType } = props;
 
-    const agents = execNodes.map((n) => {
-      if (n.type === "agentNode") {
-        return { agent_name: n.data.agentName, node_id: n.id,
-                 inputs: n.data.inputs || {}, requires_approval: n.data.requires_approval || false };
+      if (agentForgeType === "agent") {
+        return {
+          node_type: "agent", agent_name: props.agentName, node_id: id,
+          inputs: props.inputs ?? {}, requires_approval: props.requires_approval ?? false,
+        };
       }
-      // All other executable types: delegate to registry toPayload
-      const reg = REGISTRY_BY_TYPE[n.type];
-      return reg?.toPayload(n.data, n.id) ?? null;
+      if (agentForgeType === "mcp") {
+        return {
+          node_type: "mcp", agent_name: "__mcp__", node_id: id,
+          server_name: props.serverName ?? "", tool_name: props.toolName ?? "",
+          arguments: props.arguments ?? "", output_key: props.outputKey ?? "mcp_result",
+          inputs: {}, requires_approval: false,
+        };
+      }
+      if (shape.type === "bpmn:IntermediateCatchEvent") {
+        return {
+          node_type: "timer", agent_name: "__timer__", node_id: id,
+          timer_value: props.timerValue ?? "5", inputs: {}, requires_approval: false,
+        };
+      }
+      if (shape.type === "bpmn:ExclusiveGateway") {
+        return {
+          node_type: "decision", agent_name: "__decision__", node_id: id,
+          condition: props.condition ?? "False", inputs: {}, requires_approval: false,
+        };
+      }
+      if (shape.type === "bpmn:ScriptTask") {
+        return {
+          node_type: "script", agent_name: "__script__", node_id: id,
+          language: props.language ?? "python", script: props.script ?? "",
+          inputs: {}, requires_approval: false,
+        };
+      }
+      return {
+        node_type: "service", agent_name: "__service__", node_id: id,
+        method: props.method ?? "GET", url: props.url ?? "",
+        inputs: {}, requires_approval: false,
+      };
     }).filter(Boolean);
 
-    const payloadEdges = edges
-      .filter((e) => execNodeIds.has(e.source) && execNodeIds.has(e.target))
-      .map((e) => ({ source: e.source, target: e.target, sourceHandle: e.sourceHandle || null }));
+    const payloadEdges = flows
+      .filter((f) => execIds.has(f.source?.id) && execIds.has(f.target?.id))
+      .map((f) => ({
+        source: f.source.id,
+        target: f.target.id,
+        sourceHandle: f.businessObject?.conditionExpression?.body ?? null,
+      }));
 
     return { agents, edges: payloadEdges };
   },
 
-  // ── Legacy alias (kept for RunTab compatibility) ───────────────────────────
-  buildAgentsPayload: () => {
-    const payload = get().buildWorkflowPayload();
-    return payload.agents;
-  },
-
-  // ── Active run ────────────────────────────────────────────────────────────
+  // ── Run state ─────────────────────────────────────────────────────────────
   activeRunId: null,
-  runStatus: {},  // { [node_id]: status string }
-  runOutputs: {}, // { [node_id]: output dict }
+  runStatus:   {},
+  runOutputs:  {},
   runCompleted: false,
-  runError: null,
+  runError:    null,
 
-  setActiveRun: (runId) => set({ activeRunId: runId, runStatus: {}, runOutputs: {}, runCompleted: false, runError: null }),
+  setActiveRun: (runId) =>
+    set({ activeRunId: runId, runStatus: {}, runOutputs: {}, runCompleted: false, runError: null }),
   updateRunStatus: (agentStatus, agents, completed, error) =>
     set({
-      runStatus: agentStatus || {},
-      runOutputs: Object.fromEntries((agents || []).map((a) => [a.node_id, a.output])),
+      runStatus:   agentStatus ?? {},
+      runOutputs:  Object.fromEntries((agents ?? []).map((a) => [a.node_id, a.output])),
       runCompleted: completed,
-      runError: error,
+      runError:    error,
     }),
-  clearRun: () => set({ activeRunId: null, runStatus: {}, runOutputs: {}, runCompleted: false, runError: null }),
+  clearRun: () =>
+    set({ activeRunId: null, runStatus: {}, runOutputs: {}, runCompleted: false, runError: null }),
 }));

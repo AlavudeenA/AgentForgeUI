@@ -1,134 +1,97 @@
 /**
- * NODE REGISTRY DATA — pure data, no React component imports.
- * Safe to import from the Zustand store and any non-UI module.
+ * WORKFLOW ELEMENT REGISTRY — sidebar entries + BPMN type mappings.
+ * No React component imports — safe to use anywhere.
  *
- * nodeRegistry.js extends this with React components for UI use.
+ * To add a new workflow element:
+ *   1. Add ONE entry here
+ *   2. Add the matching backend handler in api/routes/workflows.py
  */
 
-export const NODE_REGISTRY_DATA = [
+export const WORKFLOW_ELEMENT_REGISTRY = [
   // ── Events ────────────────────────────────────────────────────────────────
   {
-    type:         "timerEventNode",
-    executable:   true,
-    sidebarGroup: "Events",
     shapeKey:     "timerEvent",
+    sidebarGroup: "Events",
     icon:         "⏱",
     label:        "Timer",
     title:        "Timer Event — wait / delay",
-    minimapColor: "#06b6d4",
-    defaultData:  { label: "Timer", timerType: "duration", timerValue: "5" },
-    runLabel:     (data) => `⏱ ${data.label || "Timer"} (${data.timerValue || ""}s)`,
-    toPayload:    (data, id) => ({
-      node_type: "timer", agent_name: "__timer__", node_id: id,
-      timer_value: data.timerValue || "5", inputs: {}, requires_approval: false,
-    }),
+    bpmnType:     "bpmn:IntermediateCatchEvent",
+    defaultProps: { agentForgeType: "timer", timerValue: "5", timerType: "duration" },
+    executable:   true,
   },
   {
-    type:         "messageEventNode",
-    executable:   false,
-    sidebarGroup: "Events",
     shapeKey:     "messageEvent",
+    sidebarGroup: "Events",
     icon:         "✉",
     label:        "Message",
     title:        "Message Event",
-    minimapColor: "#8b5cf6",
-    defaultData:  { label: "Message", messageName: "" },
-    runLabel:     null,
-    toPayload:    null,
+    bpmnType:     "bpmn:IntermediateCatchEvent",
+    defaultProps: { agentForgeType: "message" },
+    executable:   false,
   },
 
   // ── Gateways ──────────────────────────────────────────────────────────────
   {
-    type:         "decisionNode",
-    executable:   true,
-    sidebarGroup: "Gateways",
     shapeKey:     "decision",
+    sidebarGroup: "Gateways",
     icon:         "◆",
     label:        "XOR",
     title:        "Exclusive Gateway — one path (XOR)",
-    minimapColor: "#f59e0b",
-    defaultData:  { label: "Decision", condition: "", description: "Conditional branch" },
-    runLabel:     (data) => `◆ ${data.label || "Decision"}`,
-    toPayload:    (data, id) => ({
-      node_type: "decision", agent_name: "__decision__", node_id: id,
-      condition: data.condition || "False", inputs: {}, requires_approval: false,
-    }),
+    bpmnType:     "bpmn:ExclusiveGateway",
+    defaultProps: { agentForgeType: "decision", condition: "" },
+    executable:   true,
   },
 
   // ── Tasks ─────────────────────────────────────────────────────────────────
   {
-    type:         "mcpTaskNode",
-    executable:   true,
-    sidebarGroup: "Tasks",
     shapeKey:     "mcpTask",
+    sidebarGroup: "Tasks",
     icon:         "🔌",
     label:        "MCP",
     title:        "MCP Client — call a tool from mcp.json",
-    minimapColor: "#059669",
-    defaultData:  { label: "MCP Client", serverName: "", toolName: "", arguments: "", outputKey: "mcp_result" },
-    runLabel:     (data) => `🔌 ${data.label || "MCP"} (${data.toolName || ""})`,
-    toPayload:    (data, id) => ({
-      node_type: "mcp", agent_name: "__mcp__", node_id: id,
-      server_name: data.serverName || "", tool_name: data.toolName || "",
-      arguments: data.arguments || "", output_key: data.outputKey || "mcp_result",
-      inputs: {}, requires_approval: false,
-    }),
+    bpmnType:     "bpmn:ServiceTask",
+    defaultProps: { agentForgeType: "mcp", serverName: "", toolName: "", arguments: "", outputKey: "mcp_result" },
+    executable:   true,
   },
   {
-    type:         "serviceTaskNode",
-    executable:   false,
-    sidebarGroup: "Tasks",
     shapeKey:     "serviceTask",
+    sidebarGroup: "Tasks",
     icon:         "⚙",
     label:        "Service",
     title:        "Service Task — automated HTTP/API call",
-    minimapColor: "#6366f1",
-    defaultData:  { label: "Service Task", method: "GET", url: "", headers: "", body: "" },
-    runLabel:     null,
-    toPayload:    null,
+    bpmnType:     "bpmn:ServiceTask",
+    defaultProps: { agentForgeType: "service", method: "GET", url: "", headers: "", body: "" },
+    executable:   false,
   },
   {
-    type:         "scriptTaskNode",
-    executable:   false,
-    sidebarGroup: "Tasks",
     shapeKey:     "scriptTask",
+    sidebarGroup: "Tasks",
     icon:         "📜",
     label:        "Script",
     title:        "Script Task — runs a script",
-    minimapColor: "#8b5cf6",
-    defaultData:  { label: "Script Task", language: "python", script: "" },
-    runLabel:     null,
-    toPayload:    null,
+    bpmnType:     "bpmn:ScriptTask",
+    defaultProps: { agentForgeType: "script", language: "python", script: "" },
+    executable:   false,
   },
 
   // ── Other ─────────────────────────────────────────────────────────────────
   {
-    type:         "annotationNode",
-    executable:   false,
-    sidebarGroup: "Other",
     shapeKey:     "annotation",
+    sidebarGroup: "Other",
     icon:         "📝",
     label:        "Note",
     title:        "Annotation — add a text note to the canvas",
-    minimapColor: "#ca8a04",
-    defaultData:  { text: "Add a note…" },
-    runLabel:     null,
-    toPayload:    null,
+    bpmnType:     "bpmn:TextAnnotation",
+    defaultProps: { agentForgeType: "annotation" },
+    executable:   false,
   },
 ];
 
-// ── Derived lookups ──────────────────────────────────────────────────────────
-
-export const REGISTRY_BY_TYPE = Object.fromEntries(
-  NODE_REGISTRY_DATA.map((e) => [e.type, e])
+export const WORKFLOW_ELEMENT_BY_KEY = Object.fromEntries(
+  WORKFLOW_ELEMENT_REGISTRY.map((e) => [e.shapeKey, e])
 );
 
-export const EXECUTABLE_TYPES = new Set([
-  "agentNode",
-  ...NODE_REGISTRY_DATA.filter((e) => e.executable).map((e) => e.type),
-]);
-
-export const SIDEBAR_GROUPS = NODE_REGISTRY_DATA.reduce((acc, entry) => {
+export const SIDEBAR_GROUPS = WORKFLOW_ELEMENT_REGISTRY.reduce((acc, entry) => {
   (acc[entry.sidebarGroup] ??= []).push(entry);
   return acc;
 }, {});
