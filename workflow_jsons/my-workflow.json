@@ -1,12 +1,53 @@
 {
   "name": "my-workflow",
-  "bpmnXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<bpmn2:definitions xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n  <bpmn2:process id=\"Process_1\" isExecutable=\"true\">\n    <bpmn2:serviceTask id=\"Activity_0yg1ffm\" name=\"addition agent\">\n      <bpmn2:outgoing>Flow_1ws1fmi</bpmn2:outgoing>\n    </bpmn2:serviceTask>\n    <bpmn2:serviceTask id=\"Activity_097c53z\" name=\"division agent\">\n      <bpmn2:incoming>Flow_1ws1fmi</bpmn2:incoming>\n    </bpmn2:serviceTask>\n    <bpmn2:sequenceFlow id=\"Flow_1ws1fmi\" sourceRef=\"Activity_0yg1ffm\" targetRef=\"Activity_097c53z\" />\n  </bpmn2:process>\n  <bpmndi:BPMNDiagram id=\"BPMNDiagram_1\">\n    <bpmndi:BPMNPlane id=\"BPMNPlane_1\" bpmnElement=\"Process_1\">\n      <bpmndi:BPMNShape id=\"Activity_0yg1ffm_di\" bpmnElement=\"Activity_0yg1ffm\">\n        <dc:Bounds x=\"50\" y=\"110\" width=\"100\" height=\"80\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Activity_097c53z_di\" bpmnElement=\"Activity_097c53z\">\n        <dc:Bounds x=\"220\" y=\"110\" width=\"100\" height=\"80\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNEdge id=\"Flow_1ws1fmi_di\" bpmnElement=\"Flow_1ws1fmi\">\n        <di:waypoint x=\"150\" y=\"150\" />\n        <di:waypoint x=\"220\" y=\"150\" />\n      </bpmndi:BPMNEdge>\n    </bpmndi:BPMNPlane>\n  </bpmndi:BPMNDiagram>\n</bpmn2:definitions>\n",
+  "bpmnXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<bpmn2:definitions xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n  <bpmn2:process id=\"Process_1\" isExecutable=\"true\">\n    <bpmn2:serviceTask id=\"Activity_0yg1ffm\" name=\"addition agent\">\n      <bpmn2:outgoing>Flow_0j84isu</bpmn2:outgoing>\n    </bpmn2:serviceTask>\n    <bpmn2:intermediateCatchEvent id=\"Event_0cmk9zl\" name=\"Timer\">\n      <bpmn2:incoming>Flow_0j84isu</bpmn2:incoming>\n      <bpmn2:outgoing>Flow_014i49s</bpmn2:outgoing>\n      <bpmn2:timerEventDefinition id=\"TimerEventDefinition_1vpu39a\" />\n    </bpmn2:intermediateCatchEvent>\n    <bpmn2:sequenceFlow id=\"Flow_0j84isu\" sourceRef=\"Activity_0yg1ffm\" targetRef=\"Event_0cmk9zl\" />\n    <bpmn2:serviceTask id=\"Activity_0fhxsbm\" name=\"subtraction agent\">\n      <bpmn2:incoming>Flow_014i49s</bpmn2:incoming>\n      <bpmn2:outgoing>Flow_1jzcmlb</bpmn2:outgoing>\n      <bpmn2:outgoing>Flow_1tdujxv</bpmn2:outgoing>\n    </bpmn2:serviceTask>\n    <bpmn2:serviceTask id=\"Activity_0551btr\" name=\"multiplication agent\">\n      <bpmn2:incoming>Flow_1jzcmlb</bpmn2:incoming>\n      <bpmn2:outgoing>Flow_0knpb9n</bpmn2:outgoing>\n      <bpmn2:outgoing>Flow_1gl50vc</bpmn2:outgoing>\n    </bpmn2:serviceTask>\n    <bpmn2:serviceTask id=\"Activity_0bfick4\" name=\"division agent\">\n      <bpmn2:incoming>Flow_0knpb9n</bpmn2:incoming>\n      <bpmn2:outgoing>Flow_0d5qwvf</bpmn2:outgoing>\n    </bpmn2:serviceTask>\n    <bpmn2:serviceTask id=\"Activity_1t1xizo\" name=\"aggregate results agent\">\n      <bpmn2:incoming>Flow_1tdujxv</bpmn2:incoming>\n      <bpmn2:incoming>Flow_1gl50vc</bpmn2:incoming>\n      <bpmn2:incoming>Flow_0d5qwvf</bpmn2:incoming>\n    </bpmn2:serviceTask>\n    <bpmn2:sequenceFlow id=\"Flow_014i49s\" sourceRef=\"Event_0cmk9zl\" targetRef=\"Activity_0fhxsbm\" />\n    <bpmn2:sequenceFlow id=\"Flow_1jzcmlb\" sourceRef=\"Activity_0fhxsbm\" targetRef=\"Activity_0551btr\" />\n    <bpmn2:sequenceFlow id=\"Flow_0knpb9n\" sourceRef=\"Activity_0551btr\" targetRef=\"Activity_0bfick4\" />\n    <bpmn2:sequenceFlow id=\"Flow_1tdujxv\" sourceRef=\"Activity_0fhxsbm\" targetRef=\"Activity_1t1xizo\" />\n    <bpmn2:sequenceFlow id=\"Flow_1gl50vc\" sourceRef=\"Activity_0551btr\" targetRef=\"Activity_1t1xizo\" />\n    <bpmn2:sequenceFlow id=\"Flow_0d5qwvf\" sourceRef=\"Activity_0bfick4\" targetRef=\"Activity_1t1xizo\" />\n  </bpmn2:process>\n  <bpmndi:BPMNDiagram id=\"BPMNDiagram_1\">\n    <bpmndi:BPMNPlane id=\"BPMNPlane_1\" bpmnElement=\"Process_1\">\n      <bpmndi:BPMNShape id=\"Activity_0yg1ffm_di\" bpmnElement=\"Activity_0yg1ffm\">\n        <dc:Bounds x=\"50\" y=\"110\" width=\"100\" height=\"80\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Event_0cmk9zl_di\" bpmnElement=\"Event_0cmk9zl\">\n        <dc:Bounds x=\"72\" y=\"262\" width=\"36\" height=\"36\" />\n        <bpmndi:BPMNLabel>\n          <dc:Bounds x=\"32.5\" y=\"273\" width=\"29\" height=\"14\" />\n        </bpmndi:BPMNLabel>\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Activity_0fhxsbm_di\" bpmnElement=\"Activity_0fhxsbm\">\n        <dc:Bounds x=\"40\" y=\"340\" width=\"100\" height=\"80\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Activity_0551btr_di\" bpmnElement=\"Activity_0551btr\">\n        <dc:Bounds x=\"200\" y=\"340\" width=\"100\" height=\"80\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Activity_0bfick4_di\" bpmnElement=\"Activity_0bfick4\">\n        <dc:Bounds x=\"370\" y=\"340\" width=\"100\" height=\"80\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Activity_1t1xizo_di\" bpmnElement=\"Activity_1t1xizo\">\n        <dc:Bounds x=\"190\" y=\"500\" width=\"100\" height=\"80\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNEdge id=\"Flow_0j84isu_di\" bpmnElement=\"Flow_0j84isu\">\n        <di:waypoint x=\"100\" y=\"190\" />\n        <di:waypoint x=\"100\" y=\"226\" />\n        <di:waypoint x=\"90\" y=\"226\" />\n        <di:waypoint x=\"90\" y=\"262\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_014i49s_di\" bpmnElement=\"Flow_014i49s\">\n        <di:waypoint x=\"90\" y=\"298\" />\n        <di:waypoint x=\"90\" y=\"340\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_1jzcmlb_di\" bpmnElement=\"Flow_1jzcmlb\">\n        <di:waypoint x=\"140\" y=\"380\" />\n        <di:waypoint x=\"200\" y=\"380\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_0knpb9n_di\" bpmnElement=\"Flow_0knpb9n\">\n        <di:waypoint x=\"300\" y=\"380\" />\n        <di:waypoint x=\"370\" y=\"380\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_1tdujxv_di\" bpmnElement=\"Flow_1tdujxv\">\n        <di:waypoint x=\"140\" y=\"380\" />\n        <di:waypoint x=\"165\" y=\"380\" />\n        <di:waypoint x=\"165\" y=\"510\" />\n        <di:waypoint x=\"190\" y=\"510\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_1gl50vc_di\" bpmnElement=\"Flow_1gl50vc\">\n        <di:waypoint x=\"250\" y=\"420\" />\n        <di:waypoint x=\"250\" y=\"460\" />\n        <di:waypoint x=\"240\" y=\"460\" />\n        <di:waypoint x=\"240\" y=\"500\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_0d5qwvf_di\" bpmnElement=\"Flow_0d5qwvf\">\n        <di:waypoint x=\"370\" y=\"380\" />\n        <di:waypoint x=\"330\" y=\"380\" />\n        <di:waypoint x=\"330\" y=\"520\" />\n        <di:waypoint x=\"290\" y=\"520\" />\n      </bpmndi:BPMNEdge>\n    </bpmndi:BPMNPlane>\n  </bpmndi:BPMNDiagram>\n</bpmn2:definitions>\n",
   "elementProps": {
     "Activity_0yg1ffm": {
       "agentForgeType": "agent",
       "agentName": "addition_agent",
-      "label": "addition agent",
       "description": "Adds two numbers together after a 5-second delay",
+      "inputFormat": {
+        "operand_a": {
+          "default": "",
+          "depends_on": null,
+          "description": "First number",
+          "options": [],
+          "required": true,
+          "ui_type": "textbox"
+        },
+        "operand_b": {
+          "default": "",
+          "depends_on": null,
+          "description": "Second number",
+          "options": [],
+          "required": true,
+          "ui_type": "textbox"
+        }
+      },
+      "inputOrder": [
+        "operand_a",
+        "operand_b"
+      ],
+      "inputs": {
+        "operand_a": "2",
+        "operand_b": "5"
+      },
+      "label": "addition agent",
+      "outputFormat": {
+        "result": "<class 'float'>"
+      },
+      "requires_approval": false
+    },
+    "Event_0cmk9zl": {
+      "agentForgeType": "timer",
+      "timerValue": "5",
+      "timerType": "duration"
+    },
+    "Activity_0fhxsbm": {
+      "agentForgeType": "agent",
+      "agentName": "subtraction_agent",
+      "label": "subtraction agent",
+      "description": "Subtracts the second number from the first after a 5-second delay",
       "inputFormat": {
         "operand_a": {
           "default": "",
@@ -33,12 +74,48 @@
         "result": "<class 'float'>"
       },
       "inputs": {
-        "operand_a": "2",
-        "operand_b": "5"
+        "operand_a": "",
+        "operand_b": ""
       },
       "requires_approval": false
     },
-    "Activity_097c53z": {
+    "Activity_0551btr": {
+      "agentForgeType": "agent",
+      "agentName": "multiplication_agent",
+      "label": "multiplication agent",
+      "description": "Multiplies two numbers together after a 5-second delay",
+      "inputFormat": {
+        "operand_a": {
+          "default": "",
+          "depends_on": null,
+          "description": "First number",
+          "options": [],
+          "required": true,
+          "ui_type": "textbox"
+        },
+        "operand_b": {
+          "default": "",
+          "depends_on": null,
+          "description": "Second number",
+          "options": [],
+          "required": true,
+          "ui_type": "textbox"
+        }
+      },
+      "inputOrder": [
+        "operand_a",
+        "operand_b"
+      ],
+      "outputFormat": {
+        "result": "<class 'float'>"
+      },
+      "inputs": {
+        "operand_a": "",
+        "operand_b": ""
+      },
+      "requires_approval": false
+    },
+    "Activity_0bfick4": {
       "agentForgeType": "agent",
       "agentName": "division_agent",
       "label": "division agent",
@@ -69,8 +146,54 @@
         "result": "<class 'float'>"
       },
       "inputs": {
-        "operand_a": "{state['addition_agent_output']['result']}",
-        "operand_b": "7"
+        "operand_a": "",
+        "operand_b": ""
+      },
+      "requires_approval": false
+    },
+    "Activity_1t1xizo": {
+      "agentForgeType": "agent",
+      "agentName": "aggregate_results_agent",
+      "label": "aggregate results agent",
+      "description": "Sums results from subtraction, multiplication, and division agents into a single total",
+      "inputFormat": {
+        "division_result": {
+          "default": "",
+          "depends_on": null,
+          "description": "Result from division",
+          "options": [],
+          "required": true,
+          "ui_type": "textbox"
+        },
+        "multiplication_result": {
+          "default": "",
+          "depends_on": null,
+          "description": "Result from multiplication",
+          "options": [],
+          "required": true,
+          "ui_type": "textbox"
+        },
+        "subtraction_result": {
+          "default": "",
+          "depends_on": null,
+          "description": "Result from subtraction",
+          "options": [],
+          "required": true,
+          "ui_type": "textbox"
+        }
+      },
+      "inputOrder": [
+        "subtraction_result",
+        "multiplication_result",
+        "division_result"
+      ],
+      "outputFormat": {
+        "total": "<class 'float'>"
+      },
+      "inputs": {
+        "subtraction_result": "",
+        "multiplication_result": "",
+        "division_result": ""
       },
       "requires_approval": false
     }
