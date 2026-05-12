@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../../api/client.js";
 import { useWorkflowStore } from "../../store/useWorkflowStore.js";
 
@@ -96,6 +96,48 @@ export default function RunStatusOverlay() {
   const clearRun = useWorkflowStore((s) => s.clearRun);
   const nodes = useWorkflowStore((s) => s.nodes);
 
+  // Drag state
+  const [pos, setPos] = useState(null); // null = default CSS position
+  const drag = useRef({ active: false, startX: 0, startY: 0, originX: 0, originY: 0 });
+  const overlayRef = useRef(null);
+
+  const onMouseDown = (e) => {
+    // Only drag on left button; ignore clicks on buttons inside header
+    if (e.button !== 0 || e.target.closest("button")) return;
+    e.preventDefault();
+
+    const rect = overlayRef.current.getBoundingClientRect();
+    drag.current = {
+      active: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      originX: rect.left,
+      originY: rect.top,
+    };
+  };
+
+  useEffect(() => {
+    const onMove = (e) => {
+      if (!drag.current.active) return;
+      const dx = e.clientX - drag.current.startX;
+      const dy = e.clientY - drag.current.startY;
+      setPos({ x: drag.current.originX + dx, y: drag.current.originY + dy });
+    };
+    const onUp = () => { drag.current.active = false; };
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, []);
+
+  // Reset position when a new run starts
+  useEffect(() => {
+    if (activeRunId) setPos(null);
+  }, [activeRunId]);
+
   if (!activeRunId) return null;
 
   const EXEC_TYPES = new Set(["agentNode", "timerEventNode", "decisionNode", "mcpTaskNode"]);
@@ -112,9 +154,17 @@ export default function RunStatusOverlay() {
     return n.data?.agentName || n.id;
   };
 
+  const posStyle = pos
+    ? { position: "fixed", left: pos.x, top: pos.y, bottom: "auto", right: "auto" }
+    : {};
+
   return (
-    <div className="run-overlay">
-      <div className="run-overlay__header">
+    <div className="run-overlay" ref={overlayRef} style={posStyle}>
+      <div
+        className="run-overlay__header"
+        onMouseDown={onMouseDown}
+        style={{ cursor: "grab", userSelect: "none" }}
+      >
         <span className="run-overlay__title">
           {runCompleted ? "✓ Workflow complete" : runError ? "⚠ Workflow error" : "⟳ Running workflow…"}
         </span>

@@ -25,7 +25,16 @@
       "Bash(Remove-Item \"c:\\\\Users\\\\alavu\\\\source\\\\repos\\\\Agent Forge UI\\\\webui\\\\src\\\\components\\\\nodes\\\\McpTaskNode.jsx\")",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(python -c \"import mcp; print\\(mcp.__version__\\)\")",
+      "Bash(pip show *)",
+      "Bash(python -c \"import inspect; from mcp.client.streamable_http import streamablehttp_client; print\\(inspect.signature\\(streamablehttp_client\\)\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(pip install *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8090/mcp)",
+      "Bash(python -c \"import urllib.request; r = urllib.request.urlopen\\('http://localhost:8090/mcp'\\); print\\(r.status\\)\")",
+      "Bash(Start-Process python *)",
+      "Bash(Start-Sleep -Seconds 3)"
     ],
     "additionalDirectories": [
       "C:\\Users\\alavu\\source\\repos\\Agent Forge UI"

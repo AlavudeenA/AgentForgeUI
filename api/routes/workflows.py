@@ -275,11 +275,30 @@ async def _list_mcp_tools_from_config(server_name: str) -> list[dict]:
                 await session.initialize()
                 result = await session.list_tools()
 
-    return [
-        {"name": t.name, "description": getattr(t, "description", ""),
-         "inputSchema": getattr(t, "inputSchema", {}) or {}}
-        for t in getattr(result, "tools", [])
-    ]
+    tools_list = getattr(result, "tools", [])
+    if callable(tools_list):
+        tools_list = tools_list()
+
+    output = []
+    for t in (tools_list or []):
+        name = getattr(t, "name", str(t))
+        description = getattr(t, "description", "") or ""
+
+        # inputSchema varies by SDK version — may be a dict, pydantic model, or method
+        schema = getattr(t, "inputSchema", None) or getattr(t, "input_schema", None)
+        if callable(schema):
+            try:
+                schema = schema()
+            except Exception:
+                schema = {}
+        if schema is not None and not isinstance(schema, dict):
+            try:
+                schema = schema.model_dump() if hasattr(schema, "model_dump") else dict(schema)
+            except Exception:
+                schema = {}
+        output.append({"name": name, "description": description, "inputSchema": schema or {}})
+
+    return output
 
 
 def _make_mcp_node(server_name: str, tool_name: str, arguments_str: str,

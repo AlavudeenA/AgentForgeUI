@@ -1,0 +1,340 @@
+{
+  "name": "my-workflow parallel",
+  "nodes": [
+    {
+      "data": {
+        "agentName": "addition_agent",
+        "description": "Adds two numbers together after a 5-second delay",
+        "inputFormat": {
+          "operand_a": {
+            "default": "",
+            "depends_on": null,
+            "description": "First number",
+            "options": [],
+            "required": true,
+            "ui_type": "textbox"
+          },
+          "operand_b": {
+            "default": "",
+            "depends_on": null,
+            "description": "Second number",
+            "options": [],
+            "required": true,
+            "ui_type": "textbox"
+          }
+        },
+        "inputOrder": [
+          "operand_a",
+          "operand_b"
+        ],
+        "inputs": {
+          "operand_a": "2",
+          "operand_b": "5"
+        },
+        "label": "Addition Agent",
+        "outputFormat": {
+          "result": "<class 'float'>"
+        },
+        "requires_approval": false
+      },
+      "dragging": false,
+      "id": "node-1-1778521544888",
+      "measured": {
+        "width": 140,
+        "height": 95
+      },
+      "position": {
+        "x": 48,
+        "y": -224
+      },
+      "selected": false,
+      "type": "agentNode"
+    },
+    {
+      "data": {
+        "agentName": "subtraction_agent",
+        "description": "Subtracts the second number from the first after a 5-second delay",
+        "inputFormat": {
+          "operand_a": {
+            "default": "",
+            "depends_on": null,
+            "description": "First number",
+            "options": [],
+            "required": true,
+            "ui_type": "textbox"
+          },
+          "operand_b": {
+            "default": "",
+            "depends_on": null,
+            "description": "Second number",
+            "options": [],
+            "required": true,
+            "ui_type": "textbox"
+          }
+        },
+        "inputOrder": [
+          "operand_a",
+          "operand_b"
+        ],
+        "inputs": {
+          "operand_a": "{state['addition_agent_output']['result']}",
+          "operand_b": "5"
+        },
+        "label": "Subtraction Agent",
+        "outputFormat": {
+          "result": "<class 'float'>"
+        },
+        "requires_approval": false
+      },
+      "dragging": false,
+      "id": "node-2-1778521555831",
+      "measured": {
+        "width": 140,
+        "height": 82
+      },
+      "position": {
+        "x": -128,
+        "y": -32
+      },
+      "selected": false,
+      "type": "agentNode"
+    },
+    {
+      "data": {
+        "agentName": "multiplication_agent",
+        "description": "Multiplies two numbers together after a 5-second delay",
+        "inputFormat": {
+          "operand_a": {
+            "default": "",
+            "depends_on": null,
+            "description": "First number",
+            "options": [],
+            "required": true,
+            "ui_type": "textbox"
+          },
+          "operand_b": {
+            "default": "",
+            "depends_on": null,
+            "description": "Second number",
+            "options": [],
+            "required": true,
+            "ui_type": "textbox"
+          }
+        },
+        "inputOrder": [
+          "operand_a",
+          "operand_b"
+        ],
+        "inputs": {
+          "operand_a": "{state['addition_agent_output']['result']}",
+          "operand_b": "5"
+        },
+        "label": "Multiplication Agent",
+        "outputFormat": {
+          "result": "<class 'float'>"
+        },
+        "requires_approval": false
+      },
+      "dragging": false,
+      "id": "node-3-1778521574508",
+      "measured": {
+        "width": 140,
+        "height": 82
+      },
+      "position": {
+        "x": 48,
+        "y": -32
+      },
+      "selected": false,
+      "type": "agentNode"
+    },
+    {
+      "id": "node-1-1778561150144",
+      "type": "agentNode",
+      "position": {
+        "x": 224,
+        "y": -32
+      },
+      "data": {
+        "agentName": "division_agent",
+        "label": "Division Agent",
+        "description": "Divides the first number by the second after a 5-second delay",
+        "inputFormat": {
+          "operand_a": {
+            "default": "",
+            "depends_on": null,
+            "description": "Numerator",
+            "options": [],
+            "required": true,
+            "ui_type": "textbox"
+          },
+          "operand_b": {
+            "default": "",
+            "depends_on": null,
+            "description": "Denominator",
+            "options": [],
+            "required": true,
+            "ui_type": "textbox"
+          }
+        },
+        "inputOrder": [
+          "operand_a",
+          "operand_b"
+        ],
+        "outputFormat": {
+          "result": "<class 'float'>"
+        },
+        "inputs": {
+          "operand_a": "{state['addition_agent_output']['result']}",
+          "operand_b": "10"
+        },
+        "requires_approval": false
+      },
+      "measured": {
+        "width": 140,
+        "height": 82
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-5-aggregate",
+      "type": "agentNode",
+      "position": {
+        "x": 48,
+        "y": 160
+      },
+      "data": {
+        "agentName": "aggregate_results_agent",
+        "label": "Aggregate Results",
+        "description": "Sums results from subtraction, multiplication, and division agents into a single total",
+        "inputFormat": {
+          "subtraction_result": {
+            "default": "",
+            "depends_on": null,
+            "description": "Result from subtraction",
+            "options": [],
+            "required": true,
+            "ui_type": "textbox"
+          },
+          "multiplication_result": {
+            "default": "",
+            "depends_on": null,
+            "description": "Result from multiplication",
+            "options": [],
+            "required": true,
+            "ui_type": "textbox"
+          },
+          "division_result": {
+            "default": "",
+            "depends_on": null,
+            "description": "Result from division",
+            "options": [],
+            "required": true,
+            "ui_type": "textbox"
+          }
+        },
+        "inputOrder": [
+          "subtraction_result",
+          "multiplication_result",
+          "division_result"
+        ],
+        "outputFormat": {
+          "total": "<class 'float'>"
+        },
+        "inputs": {
+          "subtraction_result": "{state['subtraction_agent_output']['result']}",
+          "multiplication_result": "{state['multiplication_agent_output']['result']}",
+          "division_result": "{state['division_agent_output']['result']}"
+        },
+        "requires_approval": false
+      },
+      "measured": {
+        "width": 160,
+        "height": 95
+      },
+      "selected": false,
+      "dragging": false
+    }
+  ],
+  "edges": [
+    {
+      "animated": false,
+      "data": {
+        "condition": "",
+        "label": ""
+      },
+      "id": "edge-1778560913909",
+      "source": "node-1-1778521544888",
+      "sourceHandle": null,
+      "target": "node-2-1778521555831",
+      "targetHandle": null,
+      "type": "customEdge"
+    },
+    {
+      "type": "customEdge",
+      "animated": false,
+      "data": {
+        "label": "",
+        "condition": ""
+      },
+      "source": "node-1-1778521544888",
+      "sourceHandle": null,
+      "target": "node-3-1778521574508",
+      "targetHandle": null,
+      "id": "edge-1778561159969"
+    },
+    {
+      "type": "customEdge",
+      "animated": false,
+      "data": {
+        "label": "",
+        "condition": ""
+      },
+      "source": "node-1-1778521544888",
+      "sourceHandle": null,
+      "target": "node-1-1778561150144",
+      "targetHandle": null,
+      "id": "edge-1778561162132"
+    },
+    {
+      "type": "customEdge",
+      "animated": false,
+      "data": {
+        "label": "",
+        "condition": ""
+      },
+      "source": "node-2-1778521555831",
+      "sourceHandle": null,
+      "target": "node-5-aggregate",
+      "targetHandle": null,
+      "id": "edge-aggregate-sub"
+    },
+    {
+      "type": "customEdge",
+      "animated": false,
+      "data": {
+        "label": "",
+        "condition": ""
+      },
+      "source": "node-3-1778521574508",
+      "sourceHandle": null,
+      "target": "node-5-aggregate",
+      "targetHandle": null,
+      "id": "edge-aggregate-mul"
+    },
+    {
+      "type": "customEdge",
+      "animated": false,
+      "data": {
+        "label": "",
+        "condition": ""
+      },
+      "source": "node-1-1778561150144",
+      "sourceHandle": null,
+      "target": "node-5-aggregate",
+      "targetHandle": null,
+      "id": "edge-aggregate-div"
+    }
+  ]
+}

@@ -1,3 +1,5 @@
+import time
+
 from pydantic import BaseModel, Field
 
 from agents.base_agent.Agent import Agent
@@ -25,6 +27,7 @@ class DivisionAgent(Agent):
         b = float(inputs.get("operand_b", 1))
         if b == 0:
             raise ValueError("Division by zero")
+        time.sleep(5)
         result = a / b
         logger.info(f"DivisionAgent: {a} / {b} = {result}")
         state["division_agent_output"] = {"result": result}

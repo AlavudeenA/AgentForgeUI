@@ -945,7 +945,7 @@ html, body, #root {
 
 /* ── Run Status overlay (canvas) ────────────────────── */
 .run-overlay {
-  position: absolute;
+  position: fixed;
   bottom: 60px;
   right: 16px;
   width: 330px;

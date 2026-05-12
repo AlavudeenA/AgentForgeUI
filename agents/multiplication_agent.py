@@ -1,3 +1,5 @@
+import time
+
 from pydantic import BaseModel, Field
 
 from agents.base_agent.Agent import Agent
@@ -23,6 +25,7 @@ class MultiplicationAgent(Agent):
         inputs = state.get("multiplication_agent_input", {})
         a = float(inputs.get("operand_a", 0))
         b = float(inputs.get("operand_b", 0))
+        time.sleep(5)
         result = a * b
         logger.info(f"MultiplicationAgent: {a} * {b} = {result}")
         state["multiplication_agent_output"] = {"result": result}
