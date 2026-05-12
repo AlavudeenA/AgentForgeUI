@@ -47,6 +47,7 @@ export default function AgentSidebar() {
   const setAgents = useWorkflowStore((s) => s.setAgents);
   const [search, setSearch] = useState("");
   const [refreshing, setRefreshing] = useState(false);
+  const [elementsOpen, setElementsOpen] = useState(false);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -117,32 +118,39 @@ export default function AgentSidebar() {
         )}
       </div>
 
-      <div className="agent-sidebar__divider" />
+      <button
+        className="agent-sidebar__elements-toggle"
+        onClick={() => setElementsOpen((o) => !o)}
+      >
+        <span>Workflow Elements</span>
+        <span className={`agent-sidebar__elements-chevron${elementsOpen ? " open" : ""}`}>›</span>
+      </button>
 
-      <div className="agent-sidebar__shapes">
-        <div className="bpmn-group-label">Events</div>
-        <div className="bpmn-shape-grid">
-          <ShapeButton shapeKey="timerEvent" icon="⏱" label="Timer" title="Timer Event — wait / delay" />
-        </div>
+      {elementsOpen && (
+        <div className="agent-sidebar__shapes">
+          <div className="bpmn-group-label">Events</div>
+          <div className="bpmn-shape-grid">
+            <ShapeButton shapeKey="timerEvent" icon="⏱" label="Timer" title="Timer Event — wait / delay" />
+          </div>
 
-        <div className="bpmn-group-label">Gateways</div>
-        <div className="bpmn-shape-grid">
-          <ShapeButton shapeKey="decision"        icon="◆" label="XOR"      title="Exclusive Gateway — one path (XOR)" />
-          <ShapeButton shapeKey="parallelGateway" icon="⊕" label="Parallel" title="Parallel Gateway — all paths (AND)" />
-        </div>
+          <div className="bpmn-group-label">Gateways</div>
+          <div className="bpmn-shape-grid">
+            <ShapeButton shapeKey="decision" icon="◆" label="XOR" title="Exclusive Gateway — one path (XOR)" />
+          </div>
 
-        <div className="bpmn-group-label">Tasks</div>
-        <div className="bpmn-shape-grid">
-          <ShapeButton shapeKey="serviceTask" icon="⚙"  label="Service" title="Service Task — automated HTTP/API call" />
-          <ShapeButton shapeKey="scriptTask"  icon="📜" label="Script"  title="Script Task — runs a script" />
-          <ShapeButton shapeKey="mcpTask"     icon="🔌" label="MCP"     title="MCP Client — call a tool from mcp.json" />
-        </div>
+          <div className="bpmn-group-label">Tasks</div>
+          <div className="bpmn-shape-grid">
+            <ShapeButton shapeKey="serviceTask" icon="⚙"  label="Service" title="Service Task — automated HTTP/API call" />
+            <ShapeButton shapeKey="scriptTask"  icon="📜" label="Script"  title="Script Task — runs a script" />
+            <ShapeButton shapeKey="mcpTask"     icon="🔌" label="MCP"     title="MCP Client — call a tool from mcp.json" />
+          </div>
 
-        <div className="bpmn-group-label">Other</div>
-        <div className="bpmn-shape-grid">
-          <ShapeButton shapeKey="annotation" icon="📝" label="Note" title="Annotation — add a text note to the canvas" />
+          <div className="bpmn-group-label">Other</div>
+          <div className="bpmn-shape-grid">
+            <ShapeButton shapeKey="annotation" icon="📝" label="Note" title="Annotation — add a text note to the canvas" />
+          </div>
         </div>
-      </div>
+      )}
     </aside>
   );
 }

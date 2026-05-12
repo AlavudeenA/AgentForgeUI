@@ -111,20 +111,32 @@ def generate_workflow_via_copilot():
     data = request.json or {}
     user_prompt = data.get("prompt", "")
 
-    llm_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "LLMWorkflows")
-    context_parts: list[str] = []
+    # Collect paths to existing workflow JSON files as examples for the agent to read
+    wf_dir = os.path.join(_PROJECT_ROOT, "workflow_jsons")
+    example_paths: list[str] = []
+    if os.path.isdir(wf_dir):
+        for fname in sorted(os.listdir(wf_dir)):
+            if fname.endswith(".json"):
+                example_paths.append(os.path.join(wf_dir, fname))
+
+    # Optional hand-written docs from LLMWorkflows/
+    llm_dir = os.path.join(_PROJECT_ROOT, "LLMWorkflows")
+    doc_paths: list[str] = []
     if os.path.isdir(llm_dir):
         for fname in sorted(os.listdir(llm_dir)):
             if fname.endswith(".txt"):
-                fpath = os.path.join(llm_dir, fname)
-                with open(fpath, encoding="utf-8") as f:
-                    context_parts.append(f"=== {fname} ===\n{f.read()}")
+                doc_paths.append(os.path.join(llm_dir, fname))
 
-    context = "\n\n".join(context_parts)
+    path_lines = "\n".join(f"  - {p}" for p in example_paths)
+    doc_lines = "\n".join(f"  - {p}" for p in doc_paths) if doc_paths else "  (none)"
+
     full_prompt = (
-        "You are an expert workflow architect for Agentic Forge.\n"
-        f"Reference materials:\n{context}\n\n"
-        f"User request: {user_prompt}\n\n"
+        "You are an expert workflow architect for Agentic Forge.\n\n"
+        "Before generating, read the following example workflow JSON files to understand "
+        "the exact node types, edge format, input placeholders, and JSON structure to use:\n"
+        f"{path_lines}\n\n"
+        + (f"Additional reference docs:\n{doc_lines}\n\n" if doc_paths else "")
+        + f"User request: {user_prompt}\n\n"
         "Return ONLY valid JSON matching the workflow schema. No markdown fences."
     )
 

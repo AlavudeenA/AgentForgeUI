@@ -12,7 +12,6 @@ import AgentNode from "./nodes/AgentNode.jsx";
 import DecisionNode from "./nodes/DecisionNode.jsx";
 import TimerEventNode from "./nodes/TimerEventNode.jsx";
 import MessageEventNode from "./nodes/MessageEventNode.jsx";
-import ParallelGatewayNode from "./nodes/ParallelGatewayNode.jsx";
 import ServiceTaskNode from "./nodes/ServiceTaskNode.jsx";
 import ScriptTaskNode from "./nodes/ScriptTaskNode.jsx";
 import AnnotationNode from "./nodes/AnnotationNode.jsx";
@@ -24,7 +23,6 @@ const NODE_TYPES = {
   decisionNode: DecisionNode,
   timerEventNode: TimerEventNode,
   messageEventNode: MessageEventNode,
-  parallelGatewayNode: ParallelGatewayNode,
   serviceTaskNode: ServiceTaskNode,
   scriptTaskNode: ScriptTaskNode,
   annotationNode: AnnotationNode,
@@ -45,7 +43,7 @@ const TASK_NODE_COLORS = {
 };
 
 function miniMapColor(n) {
-  if (n.type === "decisionNode" || n.type === "parallelGatewayNode") return "#f59e0b";
+  if (n.type === "decisionNode") return "#f59e0b";
   if (EVENT_NODE_COLORS[n.type]) return EVENT_NODE_COLORS[n.type];
   if (TASK_NODE_COLORS[n.type]) return TASK_NODE_COLORS[n.type];
   if (n.type === "annotationNode") return "#ca8a04";
@@ -68,7 +66,6 @@ function CanvasInner() {
   const addDecisionNode = useWorkflowStore((s) => s.addDecisionNode);
   const addTimerEventNode = useWorkflowStore((s) => s.addTimerEventNode);
   const addMessageEventNode = useWorkflowStore((s) => s.addMessageEventNode);
-  const addParallelGatewayNode = useWorkflowStore((s) => s.addParallelGatewayNode);
   const addServiceTaskNode = useWorkflowStore((s) => s.addServiceTaskNode);
   const addScriptTaskNode = useWorkflowStore((s) => s.addScriptTaskNode);
   const addAnnotationNode = useWorkflowStore((s) => s.addAnnotationNode);
@@ -77,7 +74,6 @@ function CanvasInner() {
     decision: addDecisionNode,
     timerEvent: addTimerEventNode,
     messageEvent: addMessageEventNode,
-    parallelGateway: addParallelGatewayNode,
     serviceTask: addServiceTaskNode,
     scriptTask: addScriptTaskNode,
     annotation: addAnnotationNode,
@@ -108,7 +104,7 @@ function CanvasInner() {
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [screenToFlowPosition, addAgentNode, addDecisionNode,
-     addTimerEventNode, addMessageEventNode, addParallelGatewayNode,
+     addTimerEventNode, addMessageEventNode,
      addServiceTaskNode, addScriptTaskNode, addAnnotationNode, addMcpTaskNode]
   );
 

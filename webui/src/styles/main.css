@@ -354,6 +354,38 @@ html, body, #root {
   margin: 4px 0;
 }
 
+.agent-sidebar__elements-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 7px 12px;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border);
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: background 0.15s, color 0.15s;
+}
+.agent-sidebar__elements-toggle:hover {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.agent-sidebar__elements-chevron {
+  font-size: 1rem;
+  line-height: 1;
+  transition: transform 0.2s;
+  transform: rotate(0deg);
+}
+.agent-sidebar__elements-chevron.open {
+  transform: rotate(90deg);
+}
+
 .agent-sidebar__shapes { padding: 8px 10px 12px; }
 .agent-sidebar__shapes-title {
   font-size: 0.68rem;

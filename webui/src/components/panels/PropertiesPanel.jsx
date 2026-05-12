@@ -3,7 +3,7 @@ import { api } from "../../api/client.js";
 import { useWorkflowStore } from "../../store/useWorkflowStore.js";
 
 const EVENT_TYPES = ["startEventNode", "endEventNode", "timerEventNode", "messageEventNode"];
-const GATEWAY_TYPES = ["decisionNode", "parallelGatewayNode"];
+const GATEWAY_TYPES = ["decisionNode"];
 const TASK_TYPES = ["userTaskNode", "serviceTaskNode", "scriptTaskNode", "sendTaskNode"];
 
 function useOutputOptions() {
@@ -206,8 +206,7 @@ function GatewayPanel({ node }) {
   const deleteNode = useWorkflowStore((s) => s.deleteNode);
   const clearSelection = useWorkflowStore((s) => s.clearSelection);
   const { data, id, type } = node;
-  const isDecision = type === "decisionNode";
-  const title = isDecision ? "XOR Gateway" : "Parallel Gateway";
+  const title = "XOR Gateway";
 
   return (
     <div className="prop-panel">

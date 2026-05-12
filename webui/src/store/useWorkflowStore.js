@@ -107,11 +107,6 @@ export const useWorkflowStore = create((set, get) => ({
     return id;
   },
 
-  addParallelGatewayNode: (position) => {
-    const id = newId();
-    set((s) => ({ nodes: [...s.nodes, { id, type: "parallelGatewayNode", position, data: { label: "Parallel" } }], selectedNodeId: id, selectedEdgeId: null }));
-    return id;
-  },
 
   addUserTaskNode: (position) => {
     const id = newId();
