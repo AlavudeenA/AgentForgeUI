@@ -7,6 +7,7 @@ import re
 import threading
 import time
 import uuid
+from typing import Annotated
 
 from flask import Blueprint, current_app, jsonify, request, send_from_directory
 from langgraph.graph import END, StateGraph
@@ -387,6 +388,18 @@ def _normalize_agent_config(raw: dict) -> dict:
 _SPECIAL_NODE_TYPES = ("timer", "decision", "mcp")
 
 
+def _merge_state(left: dict, right: dict) -> dict:
+    """Merge two parallel state updates. Nested dicts (e.g. agent_status) are merged key-by-key
+    so that simultaneous updates from parallel branches are combined rather than overwriting."""
+    merged = dict(left)
+    for key, val in right.items():
+        if key in merged and isinstance(merged[key], dict) and isinstance(val, dict):
+            merged[key] = {**merged[key], **val}
+        else:
+            merged[key] = val
+    return merged
+
+
 def _assign_node_ids(agents_list: list[dict]) -> list[dict]:
     """Preserve canvas node_ids if already set; auto-assign for spec-format entries without one."""
     needs_assign = [a for a in agents_list
@@ -703,7 +716,7 @@ def run_workflow_langgraph():
         "error": None,
     }
 
-    builder = StateGraph(dict)
+    builder = StateGraph(Annotated[dict, _merge_state])
     node_ids: list[str] = []
     edges_raw: list[dict] = data.get("edges", [])
 
